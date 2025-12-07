@@ -1,9 +1,19 @@
-# PVC
 controllers:
   main:
     containers:
       main:
+        image:
+          tag: v0.10.3
         env:
+          DB_HOSTNAME: immich-database-rw
+          DB_PORT: "5432"
+          DB_USERNAME: immich
+          DB_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: immich-db-app
+                key: password
+          DB_DATABASE_NAME: immich
           REDIS_HOSTNAME: redis-master
           REDIS_PORT: "6379"
           REDIS_PASSWORD:

@@ -32,4 +32,8 @@ kubectl apply -f persistentVolumeClaim.yaml
 
 helm install redis oci://registry-1.docker.io/bitnamicharts/redis
 
+kubectl apply -f immich-db-secret.yaml
+
+kubectl apply -f cloudnative-pg.yaml
+
 helm install immich oci://ghcr.io/immich-app/immich-charts/immich -f values.yaml
