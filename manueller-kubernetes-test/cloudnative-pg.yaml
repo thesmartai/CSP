@@ -18,9 +18,8 @@ spec:
     initdb:
       database: immich
       owner: immich
-      passwordSecret:
+      secret:
         name: immich-db-app
-        key: password
       # TODO: Use managed extensions (pg 18)
       postInitApplicationSQL:
         # Commands based on: https://immich.app/docs/administration/postgres-standalone/#without-superuser-permission

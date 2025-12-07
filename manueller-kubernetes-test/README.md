@@ -34,6 +34,13 @@ helm install redis oci://registry-1.docker.io/bitnamicharts/redis
 
 kubectl apply -f immich-db-secret.yaml
 
+helm repo add cnpg https://cloudnative-pg.github.io/charts/
+helm repo update
+helm install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace
+(kubectl get crd clusters.postgresql.cnpg.io)
+
 kubectl apply -f cloudnative-pg.yaml
 
 helm install immich oci://ghcr.io/immich-app/immich-charts/immich -f values.yaml
+
+kubectl -n default port-forward svc/immich-server 2283:2283
