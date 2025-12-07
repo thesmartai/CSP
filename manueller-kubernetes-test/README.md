@@ -22,8 +22,14 @@ spec:
 
 # Redis
 
+helm install redis oci://registry-1.docker.io/bitnamicharts/redis
+
 # Ablauf
 ## Storage (PV & PVC)
 kubectl apply -f persistentVolume.yaml
 
 kubectl apply -f persistentVolumeClaim.yaml
+
+helm install redis oci://registry-1.docker.io/bitnamicharts/redis
+
+helm install immich oci://ghcr.io/immich-app/immich-charts/immich -f values.yaml
