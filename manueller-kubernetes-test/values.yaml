@@ -1,4 +1,16 @@
 # PVC
+controllers:
+  main:
+    containers:
+      main:
+        env:
+          REDIS_HOSTNAME: redis-master
+          REDIS_PORT: "6379"
+          REDIS_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: redis
+                key: redis-password
 immich:
   metrics:
     # Enabling this will create the service monitors needed to monitor immich with the prometheus operator
@@ -19,3 +31,5 @@ immich:
     # storageTemplate:
     #   enabled: true
     #   template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+valkey:
+  enabled: false
