@@ -44,13 +44,3 @@ kubectl apply -f ./kubernetes-objects/cloudnative-pg.yaml
 helm install immich oci://ghcr.io/immich-app/immich-charts/immich -f ./kubernetes-objects/values.yaml
 
 kubectl -n default port-forward svc/immich-server 2283:2283
-
-// ingress-controller und ingress(-resource?) -> funktioniert nicht
-
-helm repo add traefik https://traefik.github.io/charts
-
-helm repo update
-
-helm install traefik traefik/traefik
-
-kubectl apply -f ingress-ressource.yaml
