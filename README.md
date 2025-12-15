@@ -25,22 +25,10 @@ spec:
 helm install redis oci://registry-1.docker.io/bitnamicharts/redis
 
 # Ablauf
-## Storage (PV & PVC)
-kubectl apply -f ./kubernetes-objects/persistentVolume.yaml
 
-kubectl apply -f ./kubernetes-objects/persistentVolumeClaim.yaml
+im Cluster über ssh (ubuntu@[floating-ip]):
 
-helm install redis oci://registry-1.docker.io/bitnamicharts/redis
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+sudo chmod 644 /etc/rancher/rke2/rke2.yaml
 
-kubectl apply -f ./kubernetes-objects/immich-db-secret.yaml
-
-helm repo add cnpg https://cloudnative-pg.github.io/charts/
-helm repo update
-helm install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace
-(kubectl get crd clusters.postgresql.cnpg.io)
-
-kubectl apply -f ./kubernetes-objects/cloudnative-pg.yaml
-
-helm install immich oci://ghcr.io/immich-app/immich-charts/immich -f ./kubernetes-objects/values.yaml
-
-kubectl -n default port-forward svc/immich-server 2283:2283
+kubectl get all -n immich
