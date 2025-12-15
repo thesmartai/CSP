@@ -57,6 +57,24 @@ resource "null_resource" "deploy_k8s_stack" {
       "echo '--- Installing Immich ---'",
       "helm upgrade --install immich oci://ghcr.io/immich-app/immich-charts/immich --namespace immich --create-namespace --values /home/ubuntu/k8s-objects/values.yaml",
 
+      # Ingress
+      "echo '--- Installing Ingress(Controller) ---'",
+      "kubectl apply -f https://projectcontour.io/quickstart/contour.yaml",
+      "kubectl apply -f /home/ubuntu/k8s-objects/ingress.yaml",
+
+      # Warten auf LoadBalancer IP
+      "echo '--- Warte auf Zuweisung der Floating IP für Envoy... ---'",
+      
+      # Schleife: Prüft 30x alle 10 Sekunden, ob die IP da ist
+      "for i in $(seq 1 30); do LB_IP=$(kubectl get svc envoy -n projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null); if [ -n \"$LB_IP\" ]; then echo \"SUCCESS: Ingress IP ist: $LB_IP\"; break; fi; echo \"Warte auf IP... ($i/30)\"; sleep 10; done",
+      
+      # Zur Sicherheit nochmal den ganzen Status ausgeben
+      "kubectl get svc envoy -n projectcontour",
+
+
+
+
+
       "echo '--- Deployment abgeschlossen! ---'"
     ]
   }
