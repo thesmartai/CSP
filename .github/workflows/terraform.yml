@@ -24,48 +24,33 @@ jobs:
       TF_VAR_project:  ${{ secrets.OS_PROJECT }}
       TF_VAR_username: ${{ secrets.OS_USERNAME }}
       TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-
-      # SSH Key Material als Secrets (siehe unten)
-      SSH_PUBLIC_KEY:  ${{ secrets.SSH_PUBLIC_KEY }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      TF_VAR_ssh_public_key:  ${{ secrets.SSH_PUBLIC_KEY }}
+      TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v3
 
-      # Keys als Dateien schreiben (Terraform kann file() dann nutzen)
-      - name: Write SSH keys to files
-        run: |
-          mkdir -p keys
-          echo "$SSH_PUBLIC_KEY" > keys/id_ed25519.pub
-          echo "$SSH_PRIVATE_KEY" > keys/id_ed25519
-          chmod 600 keys/id_ed25519
-
-      - name: Terraform Init
+      - name: Init
         run: terraform init
 
-      - name: Terraform Format
+      - name: Fmt
         run: terraform fmt -check -recursive
 
-      - name: Terraform Validate
+      - name: Validate
         run: terraform validate
 
-      - name: Terraform Plan
+      - name: Plan
         run: terraform plan -input=false
-
 
   apply:
     name: Terraform Apply (manual approval)
     runs-on: self-hosted
     needs: plan
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
-    # Manual Approval via Environment Protection
-    environment: production
-
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    environment: production  # <-- Required reviewers in GitHub aktivieren!
 
     env:
       TF_IN_AUTOMATION: "true"
@@ -73,26 +58,15 @@ jobs:
       TF_VAR_project:  ${{ secrets.OS_PROJECT }}
       TF_VAR_username: ${{ secrets.OS_USERNAME }}
       TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-
-      SSH_PUBLIC_KEY:  ${{ secrets.SSH_PUBLIC_KEY }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      TF_VAR_ssh_public_key:  ${{ secrets.SSH_PUBLIC_KEY }}
+      TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-#keys als Dateien schreiben (Terraform kann file() dann nutzen)
-      - name: Write SSH keys to files
-        run: |
-          mkdir -p keys
-          echo "$SSH_PUBLIC_KEY" > keys/id_ed25519.pub
-          echo "$SSH_PRIVATE_KEY" > keys/id_ed25519
-          chmod 600 keys/id_ed25519
-
-      - name: Terraform Init
+      - name: Init
         run: terraform init
 
-      - name: Terraform Apply
+      - name: Apply
         run: terraform apply -auto-approve -input=false
