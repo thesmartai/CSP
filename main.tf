@@ -10,23 +10,20 @@ terraform {
       source  = "terraform-provider-openstack/openstack"
       version = ">= 2.0.0"
     }
-    local = {
-      source  = "hashicorp/local"
-      version = ">= 2.0.0"
-    }
-    null = {
-      source  = "hashicorp/null"
-      version = ">= 3.0.0"
-    }
   }
 }
 
 variable "project" { type = string }
 variable "username" { type = string }
 variable "password" { type = string }
-variable "domain_name" { type = string }
 
-# Key-INHALT kommt aus GitHub Secrets
+# Keystone v3 Domain (Fix)
+variable "domain_name" {
+  type    = string
+  default = "Default"
+}
+
+# Key-Inhalt kommt aus GitHub Secrets
 variable "ssh_public_key" {
   type      = string
   sensitive = true
@@ -75,12 +72,14 @@ provider "openstack" {
   region      = local.region
   cacert_file = local.cacert_file
 
+  # Project / User
   tenant_name = var.project
   user_name   = var.username
   password    = var.password
 
-  # FIX für "You must provide exactly one of DomainID or DomainName"
-  domain_name = var.domain_name
+  # Keystone v3: setze User + Project Domain explizit (robuster als nur domain_name)
+  user_domain_name    = var.domain_name
+  project_domain_name = var.domain_name
 }
 
 module "rke2" {

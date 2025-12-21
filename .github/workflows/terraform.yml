@@ -25,13 +25,16 @@ jobs:
       TF_VAR_project: ${{ secrets.OS_PROJECT }}
       TF_VAR_username: ${{ secrets.OS_USERNAME }}
       TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-      TF_VAR_domain_name: "Default"
-
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      # Keystone v3 Domain (Fix)
+      TF_VAR_domain_name: "Default"
+
+      # optional, schadet nicht (für Tools/SDKs)
       OS_IDENTITY_API_VERSION: "3"
       OS_USER_DOMAIN_NAME: "Default"
+      OS_PROJECT_DOMAIN_NAME: "Default"
 
     steps:
       - uses: actions/checkout@v4
@@ -65,17 +68,17 @@ jobs:
       TF_VAR_project: ${{ secrets.OS_PROJECT }}
       TF_VAR_username: ${{ secrets.OS_USERNAME }}
       TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-      TF_VAR_domain_name: "Default"
-
       TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      TF_VAR_domain_name: "Default"
+
       OS_IDENTITY_API_VERSION: "3"
       OS_USER_DOMAIN_NAME: "Default"
+      OS_PROJECT_DOMAIN_NAME: "Default"
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
 
       - name: Init
