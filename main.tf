@@ -21,9 +21,9 @@ terraform {
   }
 }
 
-variable "project"     { type = string }
-variable "username"    { type = string }
-variable "password"    { type = string }
+variable "project" { type = string }
+variable "username" { type = string }
+variable "password" { type = string }
 variable "domain_name" { type = string }
 
 # Key-INHALT kommt aus GitHub Secrets
