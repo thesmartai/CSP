@@ -1,0 +1,3 @@
+.terraform*
+terraform.tfstate*
+cloudserv8-k8s.rke2.yaml
