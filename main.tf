@@ -99,9 +99,9 @@ EOF
 }
 
 # ✅ Variablen
-variable "project"      { type = string }
-variable "username"     { type = string }
-variable "password"     { type = string }
+variable "project" { type = string }
+variable "username" { type = string }
+variable "password" { type = string }
 variable "ssh_public_key" {
   type        = string
   description = "SSH public key (z.B. Inhalt von id_ed25519.pub) als String"
