@@ -13,9 +13,18 @@ terraform {
   }
 }
 
+###########################################################
+# Variables
+###########################################################
 variable "project" { type = string }
 variable "username" { type = string }
 variable "password" { type = string }
+
+# FIX: Domain ist für Username-Auth erforderlich (genau eine von DomainID oder DomainName)
+variable "domain_name" {
+  type    = string
+  default = "Default"
+}
 
 # Key-INHALT kommt aus GitHub Secrets
 variable "ssh_public_key" {
@@ -28,6 +37,9 @@ variable "ssh_private_key" {
   sensitive = true
 }
 
+###########################################################
+# Locals
+###########################################################
 locals {
   insecure         = true
   auth_url         = "https://private-cloud.informatik.hs-fulda.de:5000"
@@ -47,7 +59,9 @@ locals {
   kubeconfig_path = "${path.module}/${lower(var.project)}-k8s.rke2.yaml"
 }
 
-# Keys als Dateien ablegen (auf Runner)
+###########################################################
+# Write keys to files (runner)
+###########################################################
 resource "local_file" "ssh_pub" {
   filename        = "${path.module}/.ci_id_ed25519.pub"
   content         = var.ssh_public_key
@@ -60,16 +74,34 @@ resource "local_sensitive_file" "ssh_priv" {
   file_permission = "0600"
 }
 
+###########################################################
+# OpenStack Provider
+###########################################################
 provider "openstack" {
-  insecure    = local.insecure
-  tenant_name = var.project
-  user_name   = var.username
-  password    = var.password
-  auth_url    = local.auth_url
-  region      = local.region
+  insecure = local.insecure
+
+  auth_url  = local.auth_url
+  region    = local.region
+  password  = var.password
+  user_name = var.username
+
+  # Project (v3)
+  project_name = var.project
+
+  # FIX: DomainName setzen (damit nicht "DomainID oder DomainName fehlt")
+  user_domain_name    = var.domain_name
+  project_domain_name = var.domain_name
+
+  # CA
   cacert_file = local.cacert_file
+
+  # Optional: falls eure Cloud noch tenant_name erwartet/benutzt, kannst du es zusätzlich lassen.
+  # tenant_name = var.project
 }
 
+###########################################################
+# RKE2 Module
+###########################################################
 module "rke2" {
   source = "git::https://github.com/srieger1/terraform-openstack-rke2.git?ref=hsfulda-example"
 
@@ -133,6 +165,9 @@ EOF
   }
 }
 
+###########################################################
+# Outputs
+###########################################################
 output "floating_ip" {
   value = module.rke2.external_ip
 }
