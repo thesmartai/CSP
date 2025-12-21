@@ -6,17 +6,17 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 concurrency:
   group: terraform-production
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   plan:
     name: Terraform Plan
-    runs-on: self-hosted   # ✅ HIER ist runs-on korrekt
+    runs-on: self-hosted
 
     env:
       TF_IN_AUTOMATION: "true"
@@ -24,8 +24,10 @@ jobs:
       TF_VAR_project:  ${{ secrets.OS_PROJECT }}
       TF_VAR_username: ${{ secrets.OS_USERNAME }}
       TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-      TF_VAR_ssh_public_key:  ${{ secrets.SSH_PUBLIC_KEY }}
-      TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # SSH Key Material als Secrets (siehe unten)
+      SSH_PUBLIC_KEY:  ${{ secrets.SSH_PUBLIC_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
       - name: Checkout
@@ -33,6 +35,14 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+
+      # Keys als Dateien schreiben (Terraform kann file() dann nutzen)
+      - name: Write SSH keys to files
+        run: |
+          mkdir -p keys
+          echo "$SSH_PUBLIC_KEY" > keys/id_ed25519.pub
+          echo "$SSH_PRIVATE_KEY" > keys/id_ed25519
+          chmod 600 keys/id_ed25519
 
       - name: Terraform Init
         run: terraform init
@@ -49,11 +59,13 @@ jobs:
 
   apply:
     name: Terraform Apply (manual approval)
+    runs-on: self-hosted
     needs: plan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-    runs-on: self-hosted   # ✅ AUCH hier korrekt
+    # Manual Approval via Environment Protection
     environment: production
+
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
 
     env:
       TF_IN_AUTOMATION: "true"
@@ -61,8 +73,9 @@ jobs:
       TF_VAR_project:  ${{ secrets.OS_PROJECT }}
       TF_VAR_username: ${{ secrets.OS_USERNAME }}
       TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-      TF_VAR_ssh_public_key:  ${{ secrets.SSH_PUBLIC_KEY }}
-      TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      SSH_PUBLIC_KEY:  ${{ secrets.SSH_PUBLIC_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
       - name: Checkout
@@ -70,6 +83,13 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+
+      - name: Write SSH keys to files
+        run: |
+          mkdir -p keys
+          echo "$SSH_PUBLIC_KEY" > keys/id_ed25519.pub
+          echo "$SSH_PRIVATE_KEY" > keys/id_ed25519
+          chmod 600 keys/id_ed25519
 
       - name: Terraform Init
         run: terraform init
