@@ -10,7 +10,9 @@ locals {
   auth_url         = "https://private-cloud.informatik.hs-fulda.de:5000"
   object_store_url = "https://10.32.4.32:443"
   region           = "RegionOne"
-  cacert_file      = "${path.module}/os-trusted-cas"
+
+  # WICHTIG: Das muss ein Datei-Pfad zu einem CA-Zertifikat sein (z.B. .pem)
+  cacert_file = "${path.module}/os-trusted-cas.pem"
 
   cluster_name     = lower("${var.project}-k8s")
   image_name       = "ubuntu-22.04-jammy-server-cloud-image-amd64"
@@ -27,12 +29,12 @@ locals {
 module "rke2" {
   source = "git::https://github.com/srieger1/terraform-openstack-rke2.git?ref=hsfulda-example"
 
-  insecure  = local.insecure
-  bootstrap = true
-  name      = local.cluster_name
+  insecure            = local.insecure
+  bootstrap           = true
+  name                = local.cluster_name
 
-  # ✅ Public Key kommt aus GitHub Secret/Variable (kein file(), kein ~/.ssh in CI)
-  ssh_authorized_keys = [trimspace(var.ssh_public_key)]
+  # <-- SSH Public Key kommt aus Variable (GitHub Secret)
+  ssh_authorized_keys = [var.ssh_public_key]
 
   floating_pool  = local.floating_ip_pool
   rules_ssh_cidr = ["0.0.0.0/0"]
@@ -98,13 +100,14 @@ EOF
   }
 }
 
-# ✅ Variablen
-variable "project" { type = string }
+variable "project"  { type = string }
 variable "username" { type = string }
 variable "password" { type = string }
+
+# <-- NEU: Public Key als Input
 variable "ssh_public_key" {
   type        = string
-  description = "SSH public key (z.B. Inhalt von id_ed25519.pub) als String"
+  description = "SSH public key (ssh-ed25519 ...)"
 }
 
 output "floating_ip" {

@@ -77,7 +77,9 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: terraform init
+      env:
+        TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+      run: terraform Init -input=false
 
     # Checks that all Terraform configuration files adhere to a canonical format
     - name: Terraform Format
