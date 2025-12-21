@@ -13,22 +13,22 @@ concurrency:
 permissions:
   contents: read
 
+# Common environment variables used by both jobs
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_VAR_project: ${{ secrets.OS_PROJECT }}
+  TF_VAR_username: ${{ secrets.OS_USERNAME }}
+  TF_VAR_password: ${{ secrets.OS_PASSWORD }}
+  TF_VAR_domain_name: "Default"
+  TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+  TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+  OS_IDENTITY_API_VERSION: "3"
+
 jobs:
   plan:
     name: Terraform Plan
     runs-on: self-hosted
-
-    env:
-      TF_IN_AUTOMATION: "true"
-      TF_INPUT: "false"
-      TF_VAR_project: ${{ secrets.OS_PROJECT }}
-      TF_VAR_username: ${{ secrets.OS_USERNAME }}
-      TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-      TF_VAR_domain_name: "Default"
-      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-      TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-      OS_IDENTITY_API_VERSION: "3"
-
     steps:
       - uses: actions/checkout@v4
 
@@ -47,24 +47,11 @@ jobs:
         run: terraform plan -input=false
 
   apply:
-    name: Terraform Apply (manual approval)
+    name: Terraform Apply
     runs-on: self-hosted
     needs: plan
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
     environment: production
-
-    env:
-      TF_IN_AUTOMATION: "true"
-      TF_INPUT: "false"
-      TF_VAR_project: ${{ secrets.OS_PROJECT }}
-      TF_VAR_username: ${{ secrets.OS_USERNAME }}
-      TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-      TF_VAR_domain_name: "Default"
-      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-      TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-      OS_IDENTITY_API_VERSION: "3"
-
     steps:
       - uses: actions/checkout@v4
 
