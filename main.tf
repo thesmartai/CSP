@@ -16,14 +16,9 @@ terraform {
 variable "project" { type = string }
 variable "username" { type = string }
 variable "password" { type = string }
+variable "domain_name" { type = string }
 
-# Keystone v3 Domain (Fix)
-variable "domain_name" {
-  type    = string
-  default = "Default"
-}
-
-# Key-Inhalt kommt aus GitHub Secrets
+# Keys kommen aus GitHub Secrets
 variable "ssh_public_key" {
   type      = string
   sensitive = true
@@ -53,33 +48,26 @@ locals {
   kubeconfig_path = "${path.module}/${lower(var.project)}-k8s.rke2.yaml"
 }
 
-# Keys als Dateien ablegen (auf Runner)
-resource "local_file" "ssh_pub" {
-  filename        = "${path.module}/.ci_id_ed25519.pub"
-  content         = var.ssh_public_key
-  file_permission = "0644"
-}
-
-resource "local_sensitive_file" "ssh_priv" {
-  filename        = "${path.module}/.ci_id_ed25519"
-  content         = var.ssh_private_key
-  file_permission = "0600"
-}
-
 provider "openstack" {
   insecure    = local.insecure
   auth_url    = local.auth_url
   region      = local.region
   cacert_file = local.cacert_file
 
-  # Project / User
+  # Project (Tenant)
   tenant_name = var.project
-  user_name   = var.username
-  password    = var.password
 
-  # Keystone v3: setze User + Project Domain explizit (robuster als nur domain_name)
+  # User auth
+  user_name = var.username
+  password  = var.password
+
+  # Keystone v3 Domain Fix
   user_domain_name    = var.domain_name
   project_domain_name = var.domain_name
+
+  # Service Catalog Fix (wenn dein Cloud-Catalog "public" endpoints hat)
+  # Wenn du weiterhin "No suitable endpoint..." bekommst, probier "internal".
+  endpoint_type = "public"
 }
 
 module "rke2" {
@@ -88,7 +76,7 @@ module "rke2" {
   insecure            = local.insecure
   bootstrap           = true
   name                = local.cluster_name
-  ssh_authorized_keys = [trimspace(local_file.ssh_pub.content)]
+  ssh_authorized_keys = [trimspace(var.ssh_public_key)]
   floating_pool       = local.floating_ip_pool
   rules_ssh_cidr      = ["0.0.0.0/0"]
   rules_k8s_cidr      = ["0.0.0.0/0"]

@@ -8,7 +8,7 @@ resource "null_resource" "deploy_k8s_stack" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file(local_sensitive_file.ssh_priv.filename)
+    private_key = var.ssh_private_key
     host        = module.rke2.external_ip
   }
 
