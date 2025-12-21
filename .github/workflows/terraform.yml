@@ -1,10 +1,13 @@
 name: Terraform
-runs-on: self-hosted
+
 on:
   pull_request:
   push:
     branches: ["main"]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: terraform-production
@@ -13,7 +16,7 @@ concurrency:
 jobs:
   plan:
     name: Terraform Plan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted   # ✅ HIER ist runs-on korrekt
 
     env:
       TF_IN_AUTOMATION: "true"
@@ -25,21 +28,31 @@ jobs:
       TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - run: terraform init
-      - run: terraform fmt -check -recursive
-      - run: terraform validate
-      - run: terraform plan
-#
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -input=false
+
 
   apply:
     name: Terraform Apply (manual approval)
-    runs-on: ubuntu-latest
     needs: plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-    # 🔐 DAS ist der Trick
+    runs-on: self-hosted   # ✅ AUCH hier korrekt
     environment: production
 
     env:
@@ -52,8 +65,14 @@ jobs:
       TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - run: terraform init
-      - run: terraform apply -auto-approve
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false
