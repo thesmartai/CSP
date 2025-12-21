@@ -13,7 +13,7 @@ terraform {
   }
 }
 
-variable "project"  { type = string }
+variable "project" { type = string }
 variable "username" { type = string }
 variable "password" { type = string }
 
@@ -112,10 +112,10 @@ EOF
   backup_schedule  = "0 6 1 * *"
   backup_retention = 20
 
-  kube_apiserver_resources = { requests = { cpu = "75m", memory = "128M" } }
-  kube_scheduler_resources = { requests = { cpu = "75m", memory = "128M" } }
+  kube_apiserver_resources          = { requests = { cpu = "75m", memory = "128M" } }
+  kube_scheduler_resources          = { requests = { cpu = "75m", memory = "128M" } }
   kube_controller_manager_resources = { requests = { cpu = "75m", memory = "128M" } }
-  etcd_resources = { requests = { cpu = "75m", memory = "128M" } }
+  etcd_resources                    = { requests = { cpu = "75m", memory = "128M" } }
 
   dns_nameservers4    = [local.dns_server]
   ff_autoremove_agent = "30s"
