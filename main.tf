@@ -17,11 +17,6 @@ variable "project" { type = string }
 variable "username" { type = string }
 variable "password" { type = string }
 
-# Public Key kommt aus GitHub Secret (nicht aus ~/.ssh)
-variable "ssh_public_key" {
-  type        = string
-  description = "SSH public key content (e.g. starts with 'ssh-ed25519 ...')"
-}
 
 locals {
   insecure         = true
