@@ -29,9 +29,9 @@ locals {
 module "rke2" {
   source = "git::https://github.com/srieger1/terraform-openstack-rke2.git?ref=hsfulda-example"
 
-  insecure            = local.insecure
-  bootstrap           = true
-  name                = local.cluster_name
+  insecure  = local.insecure
+  bootstrap = true
+  name      = local.cluster_name
 
   # <-- SSH Public Key kommt aus Variable (GitHub Secret)
   ssh_authorized_keys = [var.ssh_public_key]
@@ -100,7 +100,7 @@ EOF
   }
 }
 
-variable "project"  { type = string }
+variable "project" { type = string }
 variable "username" { type = string }
 variable "password" { type = string }
 
