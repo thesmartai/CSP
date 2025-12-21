@@ -83,7 +83,7 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-#
+#keys als Dateien schreiben (Terraform kann file() dann nutzen)
       - name: Write SSH keys to files
         run: |
           mkdir -p keys
