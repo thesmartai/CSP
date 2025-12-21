@@ -1,5 +1,5 @@
 name: Terraform
-
+runs-on: self-hosted
 on:
   pull_request:
   push:
