@@ -1,173 +1,73 @@
 ###########################################################
-# main.tf
+# deploy.tf
 ###########################################################
 
-terraform {
-  required_version = ">= 0.14.0"
+resource "null_resource" "deploy_k8s_stack" {
+  depends_on = [module.rke2]
 
-  required_providers {
-    openstack = {
-      source  = "terraform-provider-openstack/openstack"
-      version = ">= 2.0.0"
-    }
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file(local_sensitive_file.ssh_priv.filename)
+    host        = module.rke2.external_ip
   }
-}
 
-###########################################################
-# Variables
-###########################################################
-variable "project" { type = string }
-variable "username" { type = string }
-variable "password" { type = string }
-
-# FIX: Domain ist für Username-Auth erforderlich (genau eine von DomainID oder DomainName)
-variable "domain_name" {
-  type    = string
-  default = "Default"
-}
-
-# Key-INHALT kommt aus GitHub Secrets
-variable "ssh_public_key" {
-  type      = string
-  sensitive = true
-}
-
-variable "ssh_private_key" {
-  type      = string
-  sensitive = true
-}
-
-###########################################################
-# Locals
-###########################################################
-locals {
-  insecure         = true
-  auth_url         = "https://private-cloud.informatik.hs-fulda.de:5000"
-  object_store_url = "https://10.32.4.32:443"
-  region           = "RegionOne"
-  cacert_file      = "./os-trusted-cas"
-
-  cluster_name     = lower("${var.project}-k8s")
-  image_name       = "ubuntu-22.04-jammy-server-cloud-image-amd64"
-  flavor_name      = "m1.medium"
-  system_user      = "ubuntu"
-  floating_ip_pool = "ext_net"
-
-  dns_server   = "10.33.16.100"
-  rke2_version = "v1.30.3+rke2r1"
-
-  kubeconfig_path = "${path.module}/${lower(var.project)}-k8s.rke2.yaml"
-}
-
-###########################################################
-# Write keys to files (runner)
-###########################################################
-resource "local_file" "ssh_pub" {
-  filename        = "${path.module}/.ci_id_ed25519.pub"
-  content         = var.ssh_public_key
-  file_permission = "0644"
-}
-
-resource "local_sensitive_file" "ssh_priv" {
-  filename        = "${path.module}/.ci_id_ed25519"
-  content         = var.ssh_private_key
-  file_permission = "0600"
-}
-
-###########################################################
-# OpenStack Provider
-###########################################################
-provider "openstack" {
-  insecure = local.insecure
-
-  auth_url  = local.auth_url
-  region    = local.region
-  password  = var.password
-  user_name = var.username
-
-  # Project (v3)
-  project_name = var.project
-
-  # FIX: DomainName setzen (damit nicht "DomainID oder DomainName fehlt")
-  user_domain_name    = var.domain_name
-  project_domain_name = var.domain_name
-
-  # CA
-  cacert_file = local.cacert_file
-
-  # Optional: falls eure Cloud noch tenant_name erwartet/benutzt, kannst du es zusätzlich lassen.
-  # tenant_name = var.project
-}
-
-###########################################################
-# RKE2 Module
-###########################################################
-module "rke2" {
-  source = "git::https://github.com/srieger1/terraform-openstack-rke2.git?ref=hsfulda-example"
-
-  insecure            = local.insecure
-  bootstrap           = true
-  name                = local.cluster_name
-  ssh_authorized_keys = [trimspace(local_file.ssh_pub.content)]
-  floating_pool       = local.floating_ip_pool
-  rules_ssh_cidr      = ["0.0.0.0/0"]
-  rules_k8s_cidr      = ["0.0.0.0/0"]
-
-  servers = [{
-    name               = "controller"
-    flavor_name        = local.flavor_name
-    image_name         = local.image_name
-    system_user        = local.system_user
-    boot_volume_size   = 6
-    rke2_version       = local.rke2_version
-    rke2_volume_size   = 10
-    rke2_volume_device = "/dev/vdb"
-    rke2_config        = <<EOF
-write-kubeconfig-mode: "0644"
-EOF
-  }]
-
-  agents = [
-    {
-      name               = "worker"
-      nodes_count        = 1
-      flavor_name        = local.flavor_name
-      image_name         = local.image_name
-      system_user        = local.system_user
-      boot_volume_size   = 10
-      rke2_version       = local.rke2_version
-      rke2_volume_size   = 100
-      rke2_volume_device = "/dev/vdb"
-    }
-  ]
-
-  backup_schedule  = "0 6 1 * *"
-  backup_retention = 20
-
-  kube_apiserver_resources          = { requests = { cpu = "75m", memory = "128M" } }
-  kube_scheduler_resources          = { requests = { cpu = "75m", memory = "128M" } }
-  kube_controller_manager_resources = { requests = { cpu = "75m", memory = "128M" } }
-  etcd_resources                    = { requests = { cpu = "75m", memory = "128M" } }
-
-  dns_nameservers4    = [local.dns_server]
-  ff_autoremove_agent = "30s"
-  ff_write_kubeconfig = true
-  ff_native_backup    = true
-  ff_wait_ready       = true
-
-  identity_endpoint     = local.auth_url
-  object_store_endpoint = local.object_store_url
-
-  registries = {
-    mirrors = {
-      "*" = { endpoint = ["https://harbor.cs.hs-fulda.de"] }
-    }
+  provisioner "remote-exec" {
+    inline = ["mkdir -p /home/ubuntu/k8s-objects"]
   }
-}
 
-###########################################################
-# Outputs
-###########################################################
-output "floating_ip" {
-  value = module.rke2.external_ip
+  provisioner "file" {
+    source      = "${path.module}/kubernetes-objects/"
+    destination = "/home/ubuntu/k8s-objects/"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo '--- Starte Konfiguration ---'",
+      "export PATH=$PATH:/var/lib/rancher/rke2/bin",
+      "export KUBECONFIG=/etc/rancher/rke2/rke2.yaml",
+      "sudo chmod 644 /etc/rancher/rke2/rke2.yaml",
+
+      "kubectl create namespace immich --dry-run=client -o yaml | kubectl apply -f -",
+
+      "if ! command -v helm &> /dev/null; then curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh; fi",
+
+      "echo '--- Applying Storage & Secrets into Namespace immich ---'",
+      "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
+      "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolumeClaim.yaml -n immich",
+      "kubectl apply -f /home/ubuntu/k8s-objects/immich-db-secret.yaml -n immich",
+
+      "echo '--- Installing Redis ---'",
+      "helm upgrade --install redis oci://registry-1.docker.io/bitnamicharts/redis --namespace immich --wait",
+
+      "echo '--- Installing CloudNativePG Operator ---'",
+      "helm repo add cnpg https://cloudnative-pg.github.io/charts",
+      "helm repo update",
+      "helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace --wait",
+
+      "echo '--- Creating Database Cluster ---'",
+      "sleep 15",
+      "kubectl apply -f /home/ubuntu/k8s-objects/cloudnative-pg.yaml -n immich",
+
+      "echo '--- Installing Immich ---'",
+      "helm upgrade --install immich oci://ghcr.io/immich-app/immich-charts/immich --namespace immich --create-namespace --values /home/ubuntu/k8s-objects/values.yaml",
+
+      "echo '--- Installing Ingress(Controller) ---'",
+      "kubectl apply -f https://projectcontour.io/quickstart/contour.yaml",
+      "kubectl apply -f /home/ubuntu/k8s-objects/ingress.yaml",
+
+      "echo '--- Warte auf Zuweisung der Floating IP für Envoy... ---'",
+      "for i in $(seq 1 30); do LB_IP=$(kubectl get svc envoy -n projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null); if [ -n \"$LB_IP\" ]; then echo \"SUCCESS: Ingress IP ist: $LB_IP\"; break; fi; echo \"Warte auf IP... ($i/30)\"; sleep 10; done",
+      "kubectl get svc envoy -n projectcontour",
+
+      "echo '--- Deployment abgeschlossen! ---'"
+    ]
+  }
+
+  triggers = {
+    dir_sha1 = sha1(join("", [
+      for f in fileset("${path.module}/kubernetes-objects", "*") :
+      filesha1("${path.module}/kubernetes-objects/${f}")
+    ]))
+  }
 }

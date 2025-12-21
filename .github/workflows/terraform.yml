@@ -21,29 +21,35 @@ jobs:
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
-      TF_VAR_project:  ${{ secrets.OS_PROJECT }}
+
+      TF_VAR_project: ${{ secrets.OS_PROJECT }}
       TF_VAR_username: ${{ secrets.OS_USERNAME }}
       TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-      TF_VAR_ssh_public_key:  ${{ secrets.SSH_PUBLIC_KEY }}
+
+      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 🔧 OpenStack Keystone v3 FIX
+      TF_VAR_domain_name: "Default"
       OS_IDENTITY_API_VERSION: "3"
-      OS_USER_DOMAIN_NAME: "Default"
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-      - name: Init
+      - name: Terraform Init
         run: terraform init
 
-      - name: Fmt
+      - name: Terraform Format
         run: terraform fmt -check -recursive
 
-      - name: Validate
+      - name: Terraform Validate
         run: terraform validate
 
-      - name: Plan
+      - name: Terraform Plan
         run: terraform plan -input=false
 
   apply:
@@ -52,23 +58,32 @@ jobs:
     needs: plan
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
-    environment: production  # <-- Required reviewers in GitHub aktivieren!
+    environment: production  # Required reviewers aktivieren!
 
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
-      TF_VAR_project:  ${{ secrets.OS_PROJECT }}
+
+      TF_VAR_project: ${{ secrets.OS_PROJECT }}
       TF_VAR_username: ${{ secrets.OS_USERNAME }}
       TF_VAR_password: ${{ secrets.OS_PASSWORD }}
-      TF_VAR_ssh_public_key:  ${{ secrets.SSH_PUBLIC_KEY }}
+
+      TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      # 🔧 Domain MUSS auch hier gesetzt sein
+      TF_VAR_domain_name: "Default"
+      OS_IDENTITY_API_VERSION: "3"
 
-      - name: Init
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
         run: terraform init
 
-      - name: Apply
+      - name: Terraform Apply
         run: terraform apply -auto-approve -input=false
