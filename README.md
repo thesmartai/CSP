@@ -18,3 +18,6 @@ sudo chmod 644 /etc/rancher/rke2/rke2.yaml
 
 kubectl get all -n immich //für immich
 kubectl get all -n projectcontour //für ingress-controller (envoy)
+
+#Pipeline
+Die Pipeline in GitLab ist so konfiguriert, dass sie bei jedem Push auf den main-Branch ausgeführt wird.
