@@ -13,11 +13,15 @@ concurrency:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
 
-  # Terraform Vars
+  # Terraform Variablen (deine eigenen Variablen)
   TF_VAR_project: ${{ secrets.OS_PROJECT }}
   TF_VAR_username: ${{ secrets.OS_USERNAME }}
   TF_VAR_password: ${{ secrets.OS_PASSWORD }}
@@ -25,17 +29,21 @@ env:
   TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
   TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-  # OpenStack env (wichtig: die waren bei dir leer, weil nie gesetzt)
-  OS_IDENTITY_API_VERSION: "3"
+  # OpenStack Auth für Terraform Provider / SDK
   OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
-  OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
-  OS_INTERFACE: ${{ secrets.OS_INTERFACE }}
-  OS_PROJECT_NAME: ${{ secrets.OS_PROJECT_NAME }}
-  OS_PROJECT_ID: ${{ secrets.OS_PROJECT_ID }}
-  OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME }}
-  OS_PROJECT_DOMAIN_NAME: ${{ secrets.OS_PROJECT_DOMAIN_NAME }}
   OS_USERNAME: ${{ secrets.OS_USERNAME }}
   OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
+  OS_PROJECT_NAME: ${{ secrets.OS_PROJECT }}
+
+  # Wenn ihr Domains nutzt (sehr häufig "Default"):
+  OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME || 'Default' }}
+  OS_PROJECT_DOMAIN_NAME: ${{ secrets.OS_PROJECT_DOMAIN_NAME || 'Default' }}
+
+  # Wichtig für "No suitable endpoint..."
+  OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
+  OS_INTERFACE: ${{ secrets.OS_INTERFACE || 'public' }}
+
+  OS_IDENTITY_API_VERSION: "3"
 
 jobs:
   plan:
@@ -47,13 +55,11 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
 
       - name: Debug OpenStack env (safe)
-        shell: bash
         run: |
           echo "OS_AUTH_URL=${OS_AUTH_URL}"
           echo "OS_REGION_NAME=${OS_REGION_NAME}"
           echo "OS_INTERFACE=${OS_INTERFACE}"
           echo "OS_PROJECT_NAME=${OS_PROJECT_NAME}"
-          echo "OS_PROJECT_ID=${OS_PROJECT_ID}"
           echo "OS_USER_DOMAIN_NAME=${OS_USER_DOMAIN_NAME}"
           echo "OS_PROJECT_DOMAIN_NAME=${OS_PROJECT_DOMAIN_NAME}"
           echo "OS_USERNAME=${OS_USERNAME}"
