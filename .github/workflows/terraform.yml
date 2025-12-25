@@ -1,11 +1,10 @@
 name: Terraform
+
 on:
   pull_request:
   push:
     branches: ["main"]
   workflow_dispatch:
-
-
 
 concurrency:
   group: terraform-production
@@ -14,17 +13,28 @@ concurrency:
 permissions:
   contents: read
 
-# Common environment variables used by both jobs
 env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
+
+  # Terraform variables (passed as TF_VAR_*)
   TF_VAR_project: ${{ secrets.OS_PROJECT }}
   TF_VAR_username: ${{ secrets.OS_USERNAME }}
   TF_VAR_password: ${{ secrets.OS_PASSWORD }}
   TF_VAR_domain_name: "Default"
   TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
   TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+  # OpenStack env (only useful if your provider/cli expects these)
   OS_IDENTITY_API_VERSION: "3"
+  OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
+  OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
+  OS_INTERFACE: ${{ secrets.OS_INTERFACE }}
+  OS_PROJECT_NAME: ${{ secrets.OS_PROJECT_NAME }}
+  OS_PROJECT_ID: ${{ secrets.OS_PROJECT_ID }}
+  OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME }}
+  OS_PROJECT_DOMAIN_NAME: ${{ secrets.OS_PROJECT_DOMAIN_NAME }}
+  OS_USERNAME: ${{ secrets.OS_USERNAME }}
 
 jobs:
   plan:
@@ -34,6 +44,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: hashicorp/setup-terraform@v3
+
+      - name: Debug OpenStack env (safe)
+        shell: bash
+        run: |
+          echo "OS_AUTH_URL=${OS_AUTH_URL}"
+          echo "OS_REGION_NAME=${OS_REGION_NAME}"
+          echo "OS_INTERFACE=${OS_INTERFACE}"
+          echo "OS_PROJECT_NAME=${OS_PROJECT_NAME}"
+          echo "OS_PROJECT_ID=${OS_PROJECT_ID}"
+          echo "OS_USER_DOMAIN_NAME=${OS_USER_DOMAIN_NAME}"
+          echo "OS_PROJECT_DOMAIN_NAME=${OS_PROJECT_DOMAIN_NAME}"
+          echo "OS_USERNAME=${OS_USERNAME}"
 
       - name: Init
         run: terraform init
