@@ -136,3 +136,28 @@ EOF
 output "floating_ip" {
   value = module.rke2.external_ip
 }
+
+output "Username" {
+  value = var.username
+}
+
+#variable "project" { type = string }
+output "project" {
+  value = var.project
+
+}
+#variable "username" { type = string }
+output "username" {
+  value = var.username
+
+}
+#variable "password" { type = string }
+output "password" {
+  value = var.password
+
+}
+#variable "domain_name" { type = string }
+output "domain_name" {
+  value = var.domain_name
+
+}

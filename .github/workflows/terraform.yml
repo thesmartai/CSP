@@ -5,8 +5,7 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
-  - name: Terraform providers
-    run: terraform providers
+
 
 concurrency:
   group: terraform-production
