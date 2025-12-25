@@ -7,52 +7,43 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: terraform-production
+  group: terraform-production-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: read
 
-defaults:
-  run:
-    shell: bash
-
 env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
 
-  # Terraform Variablen (deine eigenen Variablen)
-  TF_VAR_project: ${{ secrets.OS_PROJECT }}
+  # OpenStack auth (als repo Variables oder Secrets hinterlegen)
+  OS_AUTH_URL: ${{ vars.OS_AUTH_URL }}
+  OS_REGION_NAME: ${{ vars.OS_REGION_NAME }}
+  OS_INTERFACE: ${{ vars.OS_INTERFACE }} # meist "public"
+  OS_IDENTITY_API_VERSION: "3"
+
+  # Achtung: Name muss zu deinem Secret passen!
+  OS_PROJECT_NAME: ${{ secrets.OS_PROJECT }}   # oder secrets.OS_PROJEC
+  OS_USERNAME: ${{ secrets.OS_USERNAME }}
+  OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
+  OS_USER_DOMAIN_NAME: "Default"
+  OS_PROJECT_DOMAIN_NAME: "Default"
+
+  # Terraform vars (falls du die im Code so nutzt)
+  TF_VAR_project: ${{ secrets.OS_PROJECT }}    # oder secrets.OS_PROJEC
   TF_VAR_username: ${{ secrets.OS_USERNAME }}
   TF_VAR_password: ${{ secrets.OS_PASSWORD }}
   TF_VAR_domain_name: "Default"
   TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
   TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-  # OpenStack Auth für Terraform Provider / SDK
-  OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
-  OS_USERNAME: ${{ secrets.OS_USERNAME }}
-  OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
-  OS_PROJECT_NAME: ${{ secrets.OS_PROJECT }}
-
-  # Wenn ihr Domains nutzt (sehr häufig "Default"):
-  OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME || 'Default' }}
-  OS_PROJECT_DOMAIN_NAME: ${{ secrets.OS_PROJECT_DOMAIN_NAME || 'Default' }}
-
-  # Wichtig für "No suitable endpoint..."
-  OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
-  OS_INTERFACE: ${{ secrets.OS_INTERFACE || 'public' }}
-
-  OS_IDENTITY_API_VERSION: "3"
-
 jobs:
   plan:
     name: Terraform Plan
     runs-on: self-hosted
-    environment: production
     steps:
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
 
       - name: Debug OpenStack env (safe)
@@ -61,8 +52,6 @@ jobs:
           echo "OS_REGION_NAME=${OS_REGION_NAME}"
           echo "OS_INTERFACE=${OS_INTERFACE}"
           echo "OS_PROJECT_NAME=${OS_PROJECT_NAME}"
-          echo "OS_USER_DOMAIN_NAME=${OS_USER_DOMAIN_NAME}"
-          echo "OS_PROJECT_DOMAIN_NAME=${OS_PROJECT_DOMAIN_NAME}"
           echo "OS_USERNAME=${OS_USERNAME}"
 
       - name: Init
@@ -75,21 +64,31 @@ jobs:
         run: terraform validate
 
       - name: Plan
-        run: terraform plan -input=false
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Upload plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
 
   apply:
     name: Terraform Apply
     runs-on: self-hosted
     needs: plan
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
+    environment: production  # => hier greift "Required reviewers" als Bestätigung
     steps:
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
+
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
 
       - name: Init
         run: terraform init
 
       - name: Apply
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -input=false -auto-approve tfplan
