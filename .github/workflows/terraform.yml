@@ -20,7 +20,7 @@ env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
 
-  # Terraform Variablen (deine eigenen Variablen)
+  # Terraform Variablen (deine eigenen Variablen)llll
   TF_VAR_project: ${{ secrets.OS_PROJECT }}
   TF_VAR_username: ${{ secrets.OS_USERNAME }}
   TF_VAR_password: ${{ secrets.OS_PASSWORD }}
