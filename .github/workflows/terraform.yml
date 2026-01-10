@@ -16,14 +16,12 @@ permissions:
 defaults:
   run:
     shell: bash
-    # WICHTIG: immer im gleichen Ordner arbeiten
     working-directory: .
 
 env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
 
-  # Terraform Variablen
   TF_VAR_project: ${{ secrets.OS_PROJECT }}
   TF_VAR_username: ${{ secrets.OS_USERNAME }}
   TF_VAR_password: ${{ secrets.OS_PASSWORD }}
@@ -31,7 +29,6 @@ env:
   TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
   TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-  # OpenStack Auth
   OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
   OS_USERNAME: ${{ secrets.OS_USERNAME }}
   OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
@@ -48,19 +45,17 @@ jobs:
   plan:
     name: Terraform Plan
     runs-on: self-hosted
-
+    environment: production
     steps:
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
-
-      # Sicherstellen, dass immer derselbe Workspace genutzt wird
-      - name: Select workspace
-        run: |
-          terraform workspace select production || terraform workspace new production
 
       - name: Init
         run: terraform init
+
+      - name: Select workspace (create if missing)
+        run: |
+          terraform workspace select production || terraform workspace new production
 
       - name: Fmt
         run: terraform fmt -check -recursive
@@ -68,11 +63,13 @@ jobs:
       - name: Validate
         run: terraform validate
 
-      - name: Debug state
+      - name: Debug state/workspace
         run: |
           echo "PWD=$(pwd)"
           terraform workspace show
+          terraform workspace list
           ls -la terraform.tfstate* || true
+          ls -la terraform.tfstate.d || true
 
       - name: Plan
         run: terraform plan -input=false -out=tfplan
@@ -88,18 +85,17 @@ jobs:
     runs-on: self-hosted
     needs: plan
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
+    environment: production
     steps:
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
-
-      - name: Select workspace
-        run: |
-          terraform workspace select production
 
       - name: Init
         run: terraform init
+
+      - name: Select workspace (create if missing)
+        run: |
+          terraform workspace select production || terraform workspace new production
 
       - name: Download plan artifact
         uses: actions/download-artifact@v4
