@@ -5,11 +5,16 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: "Type DESTROY to confirm terraform destroy"
+        required: false
+        default: ""
 
 concurrency:
   group: terraform-production
   cancel-in-progress: false
-#
+
 permissions:
   contents: read
 
@@ -40,7 +45,10 @@ env:
   OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
   OS_INTERFACE: ${{ secrets.OS_INTERFACE || 'public' }}
   OS_IDENTITY_API_VERSION: "3"
-#
+
+  # Fester Pfad auf dem Runner (persistiert unabhängig von _work/...)
+  STATE_DIR: /home/ubuntu/ahmad_info/state/production
+
 jobs:
   plan:
     name: Terraform Plan
@@ -49,6 +57,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
+
+      - name: Debug runner/workspace
+        run: |
+          echo "HOST=$(hostname)"
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          pwd
+
+      - name: Restore local state (persistent)
+        run: |
+          mkdir -p "$STATE_DIR"
+          # Workspace-state zurückholen, falls vorhanden
+          if [ -f "$STATE_DIR/terraform.tfstate" ]; then
+            mkdir -p terraform.tfstate.d/production
+            cp "$STATE_DIR/terraform.tfstate" terraform.tfstate.d/production/terraform.tfstate
+          fi
 
       - name: Init
         run: terraform init
@@ -70,6 +93,7 @@ jobs:
           terraform workspace list
           ls -la terraform.tfstate* || true
           ls -la terraform.tfstate.d || true
+          ls -la terraform.tfstate.d/production || true
 
       - name: Plan
         run: terraform plan -input=false -out=tfplan
@@ -80,27 +104,8 @@ jobs:
           name: tfplan
           path: tfplan
 
-  apply:
-    name: Terraform Apply
-    runs-on: self-hosted
-    needs: plan
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-
-      - name: Init
-        run: terraform init
-
-      - name: Select workspace (create if missing)
+      - name: Persist local state (persistent)
+        if: always()
         run: |
-          terraform workspace select production || terraform workspace new production
-
-      - name: Download plan artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
-
-      - name: Apply
-        run: terraform apply -auto-approve -input=false tfplan
+          mkdir -p "$STATE_DIR"
+          if [ -f terraform.tfstate.d/production/terraform.tfstate ]; then
