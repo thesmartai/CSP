@@ -1,0 +1,37 @@
+name: Terraform
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: "Type DESTROY to confirm terraform destroy"
+        required: true
+        default: ""
+
+jobs:
+  destroy:
+    name: Terraform Destroy
+    runs-on: self-hosted
+    environment: production
+
+    # NUR per Button + Bestätigung
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_destroy == 'DESTROY'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Init
+        run: terraform init
+
+      - name: Select workspace (create if missing)
+        run: |
+          terraform workspace select production || terraform workspace new production
+
+      - name: Debug state before destroy
+        run: |
+          terraform workspace show
+          ls -la terraform.tfstate* || true
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve -input=false
