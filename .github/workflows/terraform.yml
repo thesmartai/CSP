@@ -48,7 +48,6 @@ jobs:
   plan:
     name: Terraform Plan
     runs-on: self-hosted
-    environment: production
 
     steps:
       - uses: actions/checkout@v4
@@ -89,7 +88,6 @@ jobs:
     runs-on: self-hosted
     needs: plan
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
 
     steps:
       - uses: actions/checkout@v4
