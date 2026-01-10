@@ -40,7 +40,7 @@ env:
   OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
   OS_INTERFACE: ${{ secrets.OS_INTERFACE || 'public' }}
   OS_IDENTITY_API_VERSION: "3"
-
+#
 jobs:
   plan:
     name: Terraform Plan
