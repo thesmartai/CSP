@@ -8,11 +8,17 @@ on:
     inputs:
       action:
         description: "Wähle aus: plan | apply | destroy"
+        type: choice
         required: true
-        default: "plan"
+        options:
+          - plan
+          - apply
+          - destroy
+        default: plan
       confirm_destroy:
         description: "Zum Bestätigen DESTROY eintippen (nur für destroy)"
         required: false
+        default: ""
 
 concurrency:
   group: terraform-production
@@ -55,10 +61,10 @@ jobs:
     name: Terraform Plan
     runs-on: self-hosted
     environment: production
-    # normal bei PR/push + auch manuell wenn action=plan
-    if: github.event_name != 'workflow_dispatch' || inputs.action == 'plan'
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.action == 'plan' }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: hashicorp/setup-terraform@v3
 
       - name: Debug OpenStack env (safe)
@@ -88,12 +94,14 @@ jobs:
     runs-on: self-hosted
     environment: production
     needs: plan
-    # nur bei push auf main ODER manuell wenn action=apply
-    if: |
-      (github.ref == 'refs/heads/main' && github.event_name == 'push')
-      || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
+    if: >-
+      ${{
+        (github.ref == 'refs/heads/main' && github.event_name == 'push')
+        || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
+      }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: hashicorp/setup-terraform@v3
 
       - name: Init
@@ -106,10 +114,10 @@ jobs:
     name: Terraform Destroy
     runs-on: self-hosted
     environment: production
-    # nur manuell + mit harter Bestätigung
-    if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' && inputs.confirm_destroy == 'DESTROY'
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' && inputs.confirm_destroy == 'DESTROY' }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: hashicorp/setup-terraform@v3
 
       - name: Init
