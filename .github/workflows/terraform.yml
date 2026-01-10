@@ -5,6 +5,14 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      action:
+        description: "Wähle aus: plan | apply | destroy"
+        required: true
+        default: "plan"
+      confirm_destroy:
+        description: "Zum Bestätigen DESTROY eintippen (nur für destroy)"
+        required: false
 
 concurrency:
   group: terraform-production
@@ -16,11 +24,12 @@ permissions:
 defaults:
   run:
     shell: bash
+
 env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
 
-  # Terraform Variablen (deine eigenen Variablen)test
+  # Terraform Variablen
   TF_VAR_project: ${{ secrets.OS_PROJECT }}
   TF_VAR_username: ${{ secrets.OS_USERNAME }}
   TF_VAR_password: ${{ secrets.OS_PASSWORD }}
@@ -34,14 +43,11 @@ env:
   OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
   OS_PROJECT_NAME: ${{ secrets.OS_PROJECT }}
 
-  # Wenn ihr Domains nutzt (sehr häufig "Default"):
   OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME || 'Default' }}
   OS_PROJECT_DOMAIN_NAME: ${{ secrets.OS_PROJECT_DOMAIN_NAME || 'Default' }}
 
-  # Wichtig für "No suitable endpoint..."
   OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
   OS_INTERFACE: ${{ secrets.OS_INTERFACE || 'public' }}
-
   OS_IDENTITY_API_VERSION: "3"
 
 jobs:
@@ -49,9 +55,10 @@ jobs:
     name: Terraform Plan
     runs-on: self-hosted
     environment: production
+    # normal bei PR/push + auch manuell wenn action=plan
+    if: github.event_name != 'workflow_dispatch' || inputs.action == 'plan'
     steps:
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
 
       - name: Debug OpenStack env (safe)
@@ -65,7 +72,7 @@ jobs:
           echo "OS_USERNAME=${OS_USERNAME}"
 
       - name: Init
-        run: terraform init
+        run: terraform init -input=false
 
       - name: Fmt
         run: terraform fmt -check -recursive
@@ -79,16 +86,37 @@ jobs:
   apply:
     name: Terraform Apply
     runs-on: self-hosted
-    needs: plan
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
+    needs: plan
+    # nur bei push auf main ODER manuell wenn action=apply
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push')
+      || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
     steps:
       - uses: actions/checkout@v4
-
       - uses: hashicorp/setup-terraform@v3
 
       - name: Init
-        run: terraform init
+        run: terraform init -input=false
 
       - name: Apply
         run: terraform apply -auto-approve -input=false
+
+  destroy:
+    name: Terraform Destroy
+    runs-on: self-hosted
+    environment: production
+    # nur manuell + mit harter Bestätigung
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' && inputs.confirm_destroy == 'DESTROY'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Init
+        run: terraform init -input=false
+
+      - name: Destroy Plan
+        run: terraform plan -destroy -input=false -out=destroy.plan
+
+      - name: Destroy Apply
+        run: terraform apply -auto-approve -input=false destroy.plan
