@@ -16,9 +16,10 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # optional (nur wenn du Workspaces nutzt)
-      # - name: Select Workspace
-      #   run: terraform workspace select prod || terraform workspace new prod
+      
+       #optional (nur wenn du Workspaces nutzt)
+      - name: Select Workspace
+        run: terraform workspace select prod || terraform workspace new prod
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve -var-file=/home/ubuntu/ahmad_info/destroy.tfvars
