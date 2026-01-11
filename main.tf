@@ -113,7 +113,7 @@ EOCONFIG
       system_user        = local.system_user
       boot_volume_size   = 20
       rke2_version       = local.rke2_version
-      rke2_volume_size   = 200
+      rke2_volume_size   = 99
       rke2_volume_device = "/dev/vdb"
     }
   ]
