@@ -32,7 +32,7 @@ resource "null_resource" "deploy_k8s_stack" {
 
       # Storage & Secrets 
       "echo '--- Applying Storage & Secrets into Namespace immich ---'",
-      "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
+      # "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml", # Wird nicht mehr benötigt, da Dynamic Provisioning über Cinder genutzt wird
 
       "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolumeClaim.yaml -n immich",
 
