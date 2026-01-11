@@ -31,7 +31,7 @@ controllers:
           limits:
             cpu: 1000m
             memory: 4Gi
-            ephemeral-storage: 2Gi # GEÄNDERT: Setzt ein Limit, um den Knoten zu schützen.
+            ephemeral-storage: 2Gi # GEÄNDERT: Setzt ein Limit, um den Knoten zu schützen..
 immich:
   metrics:
     # Enabling this will create the service monitors needed to monitor immich with the prometheus operator

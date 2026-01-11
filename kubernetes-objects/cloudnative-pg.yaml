@@ -17,6 +17,7 @@ spec:
       - "vchord.so"
 
   bootstrap:
+    # datenbank leer initialsieren
     initdb:
       database: immich
       owner: immich
