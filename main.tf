@@ -15,8 +15,17 @@ terraform {
 
 variable "project" { type = string }
 variable "username" { type = string }
-variable "password" { type = string }
+variable "password" {
+  type      = string
+  sensitive = true
+}
 variable "domain_name" { type = string }
+
+# Optional: skip waiting for full cluster readiness to speed up apply.
+variable "wait_ready" {
+  type    = bool
+  default = false
+}
 
 # Keys kommen aus GitHub Secrets
 variable "ssh_public_key" {
@@ -38,7 +47,7 @@ locals {
 
   cluster_name     = lower("${var.project}-k8s")
   image_name       = "ubuntu-22.04-jammy-server-cloud-image-amd64"
-  flavor_name      = "m1.medium"
+  flavor_name      = "m1.large"
   system_user      = "ubuntu"
   floating_ip_pool = "ext_net"
 
@@ -86,13 +95,13 @@ module "rke2" {
     flavor_name        = local.flavor_name
     image_name         = local.image_name
     system_user        = local.system_user
-    boot_volume_size   = 6
+    boot_volume_size   = 20
     rke2_version       = local.rke2_version
-    rke2_volume_size   = 10
+    rke2_volume_size   = 50
     rke2_volume_device = "/dev/vdb"
-    rke2_config        = <<EOF
-write-kubeconfig-mode: "0644"
-EOF
+    rke2_config        = <<EOCONFIG
+write-kubeconfig-mode: "0600" # Harden kubeconfig permissions.
+EOCONFIG
   }]
 
   agents = [
@@ -102,9 +111,9 @@ EOF
       flavor_name        = local.flavor_name
       image_name         = local.image_name
       system_user        = local.system_user
-      boot_volume_size   = 10
+      boot_volume_size   = 20
       rke2_version       = local.rke2_version
-      rke2_volume_size   = 100
+      rke2_volume_size   = 200
       rke2_volume_device = "/dev/vdb"
     }
   ]
@@ -121,7 +130,7 @@ EOF
   ff_autoremove_agent = "30s"
   ff_write_kubeconfig = false # Wir holen uns das Kubeconfig via Terraform Output
   ff_native_backup    = true
-  ff_wait_ready       = true
+  ff_wait_ready       = var.wait_ready # Avoid long waits unless explicitly enabled.
 
   identity_endpoint     = local.auth_url
   object_store_endpoint = local.object_store_url
@@ -143,10 +152,6 @@ output "floating_ip" {
   value = module.rke2.external_ip
 }
 
-output "Username" {
-  value = var.username
-}
-
 #variable "project" { type = string }
 output "project" {
   value = var.project
@@ -155,11 +160,6 @@ output "project" {
 #variable "username" { type = string }
 output "username" {
   value = var.username
-
-}
-#variable "password" { type = string }
-output "password" {
-  value = var.password
 
 }
 #variable "domain_name" { type = string }
