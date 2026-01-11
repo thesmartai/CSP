@@ -155,7 +155,7 @@ EOF
   kube_controller_manager_resources = { requests = { cpu = "75m", memory = "128M" } }
   etcd_resources                    = { requests = { cpu = "75m", memory = "128M" } }
 
-  dns_nameservers4    = [local.dns_server]
+  dns_nameservers4 = [local.dns_server]
 
   # Feature flags
   ff_autoremove_agent = "30s"
