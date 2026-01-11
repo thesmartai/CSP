@@ -34,7 +34,7 @@ resource "null_resource" "deploy_k8s_stack" {
 
   provisioner "remote-exec" {
     inline = [
-      "set -euo pipefail",
+      "set -euox pipefail",
 
       "echo '--- Warte auf rke2-server & kubeconfig (max ~5min) ---'",
       "for i in $(seq 1 60); do sudo systemctl is-active --quiet rke2-server && break; echo \"rke2-server noch nicht aktiv ($i/60)\"; sleep 5; done",
