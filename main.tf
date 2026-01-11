@@ -10,7 +10,7 @@ terraform {
 }
 
 ############################
-# Variables
+# Variables..
 ############################
 
 variable "project" {
