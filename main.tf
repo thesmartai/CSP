@@ -1,9 +1,9 @@
 ###########################################################
-# main.tf
+# main.tf (OPTIMIERT)
 ###########################################################
 
 terraform {
-  required_version = ">= 0.14.0"
+  required_version = ">= 1.3.0"
 
   required_providers {
     openstack = {
@@ -13,21 +13,19 @@ terraform {
   }
 }
 
-variable "project" { type = string }
-variable "username" { type = string }
+#######################
+# Variables
+#######################
+
+variable "project"      { type = string }
+variable "username"     { type = string }
+variable "domain_name"  { type = string }
+
 variable "password" {
   type      = string
   sensitive = true
 }
-variable "domain_name" { type = string }
 
-# Optional: skip waiting for full cluster readiness to speed up apply.
-variable "wait_ready" {
-  type    = bool
-  default = false
-}
-
-# Keys kommen aus GitHub Secrets
 variable "ssh_public_key" {
   type      = string
   sensitive = true
@@ -38,11 +36,21 @@ variable "ssh_private_key" {
   sensitive = true
 }
 
+# Cluster-Warten optional (Performance!)
+variable "wait_ready" {
+  type    = bool
+  default = false
+}
+
+#######################
+# Locals
+#######################
+
 locals {
   insecure         = true
+  region           = "RegionOne"
   auth_url         = "https://private-cloud.informatik.hs-fulda.de:5000"
   object_store_url = "https://10.32.4.32:443"
-  region           = "RegionOne"
   cacert_file      = "./os-trusted-cas"
 
   cluster_name     = lower("${var.project}-k8s")
@@ -53,31 +61,29 @@ locals {
 
   dns_server   = "10.33.16.100"
   rke2_version = "v1.30.3+rke2r1"
-
-  kubeconfig_path = "${path.module}/${lower(var.project)}-k8s.rke2.yaml"
 }
+
+#######################
+# Provider
+#######################
 
 provider "openstack" {
-  insecure    = local.insecure
-  auth_url    = local.auth_url
-  region      = local.region
-  cacert_file = local.cacert_file
+  insecure           = local.insecure
+  auth_url           = local.auth_url
+  region             = local.region
+  cacert_file        = local.cacert_file
+  endpoint_type      = "public"
 
-  # Project (Tenant)
-  tenant_name = var.project
-
-  # User auth
-  user_name = var.username
-  password  = var.password
-
-  # Keystone v3 Domain Fix
-  user_domain_name    = var.domain_name
+  tenant_name        = var.project
+  user_name          = var.username
+  password           = var.password
+  user_domain_name   = var.domain_name
   project_domain_name = var.domain_name
-
-  # Service Catalog Fix (wenn dein Cloud-Catalog "public" endpoints hat)
-  # Wenn du weiterhin "No suitable endpoint..." bekommst, probier "internal".
-  endpoint_type = "public"
 }
+
+#######################
+# RKE2 Cluster
+#######################
 
 module "rke2" {
   source = "git::https://github.com/srieger1/terraform-openstack-rke2.git?ref=hsfulda-example"
@@ -87,8 +93,10 @@ module "rke2" {
   name                = local.cluster_name
   ssh_authorized_keys = [trimspace(var.ssh_public_key)]
   floating_pool       = local.floating_ip_pool
-  rules_ssh_cidr      = ["0.0.0.0/0"]
-  rules_k8s_cidr      = ["0.0.0.0/0"]
+
+  # ⚠️ Offen – OK für Test, NICHT für Prod
+  rules_ssh_cidr = ["0.0.0.0/0"]
+  rules_k8s_cidr = ["0.0.0.0/0"]
 
   servers = [{
     name               = "controller"
@@ -97,40 +105,45 @@ module "rke2" {
     system_user        = local.system_user
     boot_volume_size   = 20
     rke2_version       = local.rke2_version
+
     rke2_volume_size   = 50
     rke2_volume_device = "/dev/vdb"
-    rke2_config        = <<EOCONFIG
-write-kubeconfig-mode: "0600" # Harden kubeconfig permissions.
+
+    rke2_config = <<EOCONFIG
+write-kubeconfig-mode: "0600"
 EOCONFIG
   }]
 
-  agents = [
-    {
-      name               = "worker"
-      nodes_count        = 1
-      flavor_name        = local.flavor_name
-      image_name         = local.image_name
-      system_user        = local.system_user
-      boot_volume_size   = 22
-      rke2_version       = local.rke2_version
-      rke2_volume_size   = 100
-      rke2_volume_device = "/dev/vdb"
-    }
-  ]
+  agents = [{
+    name               = "worker"
+    nodes_count        = 1
+    flavor_name        = local.flavor_name
+    image_name         = local.image_name
+    system_user        = local.system_user
+    boot_volume_size   = 22
+    rke2_version       = local.rke2_version
+
+    # ❗ FIX: unter OpenStack-Limit bleiben
+    rke2_volume_size   = 99
+    rke2_volume_device = "/dev/vdb"
+  }]
 
   backup_schedule  = "0 6 1 * *"
   backup_retention = 20
 
-  kube_apiserver_resources          = { requests = { cpu = "75m", memory = "128M" } }
-  kube_scheduler_resources          = { requests = { cpu = "75m", memory = "128M" } }
-  kube_controller_manager_resources = { requests = { cpu = "75m", memory = "128M" } }
-  etcd_resources                    = { requests = { cpu = "75m", memory = "128M" } }
+  # ⚡ Ressourcenschonend
+  kube_apiserver_resources          = { requests = { cpu = "75m", memory = "128Mi" } }
+  kube_scheduler_resources          = { requests = { cpu = "75m", memory = "128Mi" } }
+  kube_controller_manager_resources = { requests = { cpu = "75m", memory = "128Mi" } }
+  etcd_resources                    = { requests = { cpu = "75m", memory = "128Mi" } }
 
-  dns_nameservers4    = [local.dns_server]
+  dns_nameservers4 = [local.dns_server]
+
+  # ⚡ Performance-FLAGS
   ff_autoremove_agent = "30s"
   ff_write_kubeconfig = true
   ff_native_backup    = true
-  ff_wait_ready       = var.wait_ready # Avoid long waits unless explicitly enabled.
+  ff_wait_ready       = var.wait_ready
 
   identity_endpoint     = local.auth_url
   object_store_endpoint = local.object_store_url
@@ -142,48 +155,20 @@ EOCONFIG
   }
 }
 
-##############################################################
-# Application Outputs##
-###########################################################
-
-# Optional: Port deiner App (ändern wenn du z.B. 443/8080 nutzt)
-variable "app_port" {
-  type    = number
-  default = 80
-}
-
-# Optional: Pfad deiner App (z.B. "/")
-variable "app_path" {
-  type    = string
-  default = "/"
-}
-
-# Public URL für deine Application
-output "application_url" {
-  value = "http://${module.rke2.external_ip}:${var.app_port}${var.app_path}"
-}
-
-# Nur die IP (falls du sie separat brauchst)
-output "application_ip" {
-  value = module.rke2.external_ip
-}
+#######################
+# Outputs (sauber & nützlich)
+#######################
 
 output "floating_ip" {
-  value = module.rke2.external_ip
+  description = "Public Floating IP of the cluster"
+  value       = module.rke2.external_ip
 }
 
-#variable "project" { type = string }
+output "application_url" {
+  description = "Application base URL"
+  value       = "http://${module.rke2.external_ip}"
+}
+
 output "project" {
   value = var.project
-
-}
-#variable "username" { type = string }
-output "username" {
-  value = var.username
-
-}
-#variable "domain_name" { type = string }
-output "domain_name" {
-  value = var.domain_name
-
 }

@@ -1,8 +1,15 @@
 ###########################################################
-# deploy.tf      #
+# deploy.tf (OPTIMIERT)
 ###########################################################
 
+variable "deploy_apps" {
+  type    = bool
+  default = true
+}
+
 resource "null_resource" "deploy_k8s_stack" {
+  count = var.deploy_apps ? 1 : 0
+
   depends_on = [module.rke2]
 
   connection {
@@ -10,63 +17,66 @@ resource "null_resource" "deploy_k8s_stack" {
     user        = "ubuntu"
     private_key = var.ssh_private_key
     host        = module.rke2.external_ip
+    timeout     = "2m"
   }
 
-  provisioner "remote-exec" {
-    inline = ["mkdir -p /home/ubuntu/k8s-objects"]
-  }
-
+  # --- Dateien kopieren (schnell, stabil) ---
   provisioner "file" {
     source      = "${path.module}/kubernetes-objects/"
     destination = "/home/ubuntu/k8s-objects/"
   }
 
+  # --- Deployment ---
   provisioner "remote-exec" {
     inline = [
-      "echo '--- Starte Konfiguration ---'",
+      "set -e",
+
+      "echo '--- Init ---'",
       "export PATH=$PATH:/var/lib/rancher/rke2/bin",
       "export KUBECONFIG=/etc/rancher/rke2/rke2.yaml",
       "sudo chmod 644 /etc/rancher/rke2/rke2.yaml",
 
-      "kubectl create namespace immich --dry-run=client -o yaml | kubectl apply -f -",
+      # Namespace (idempotent)
+      "kubectl get ns immich >/dev/null 2>&1 || kubectl create ns immich",
 
-      "if ! command -v helm &> /dev/null; then curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh; fi",
+      # Helm nur installieren, wenn nötig
+      "command -v helm >/dev/null 2>&1 || (curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash)",
 
-      "echo '--- Applying Storage & Secrets into Namespace immich ---'",
+      "echo '--- Base Resources ---'",
       "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
       "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolumeClaim.yaml -n immich",
       "kubectl apply -f /home/ubuntu/k8s-objects/immich-db-secret.yaml -n immich",
 
-      "echo '--- Installing Redis ---'",
-      "helm upgrade --install redis oci://registry-1.docker.io/bitnamicharts/redis --namespace immich --wait",
+      "echo '--- Redis (NO WAIT) ---'",
+      "helm upgrade --install redis oci://registry-1.docker.io/bitnamicharts/redis --namespace immich",
 
-      "echo '--- Installing CloudNativePG Operator ---'",
-      "helm repo add cnpg https://cloudnative-pg.github.io/charts",
+      "echo '--- CloudNativePG Operator (NO WAIT) ---'",
+      "helm repo add cnpg https://cloudnative-pg.github.io/charts || true",
       "helm repo update",
-      "helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace --wait",
+      "helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace",
 
-      "echo '--- Creating Database Cluster ---'",
-      "sleep 15",
+      "echo '--- Database ---'",
       "kubectl apply -f /home/ubuntu/k8s-objects/cloudnative-pg.yaml -n immich",
 
-      "echo '--- Installing Immich ---'",
-      "helm upgrade --install immich oci://ghcr.io/immich-app/immich-charts/immich --namespace immich --create-namespace --values /home/ubuntu/k8s-objects/values.yaml",
+      "echo '--- Immich ---'",
+      "helm upgrade --install immich oci://ghcr.io/immich-app/immich-charts/immich --namespace immich --values /home/ubuntu/k8s-objects/values.yaml",
 
-      "echo '--- Installing Ingress(Controller) ---'",
+      "echo '--- Ingress ---'",
       "kubectl apply -f https://projectcontour.io/quickstart/contour.yaml",
       "kubectl apply -f /home/ubuntu/k8s-objects/ingress.yaml",
 
-      "echo '--- Warte auf Zuweisung der Floating IP für Envoy... ---'",
-      "for i in $(seq 1 30); do LB_IP=$(kubectl get svc envoy -n projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null); if [ -n \"$LB_IP\" ]; then echo \"SUCCESS: Ingress IP ist: $LB_IP\"; break; fi; echo \"Warte auf IP... ($i/30)\"; sleep 10; done",
-      "kubectl get svc envoy -n projectcontour",
+      "echo '--- Status (non-blocking) ---'",
+      "kubectl get pods -n immich",
+      "kubectl get svc -n projectcontour",
 
-      "echo '--- Deployment abgeschlossen! ---'"
+      "echo '--- Deployment DONE ---'"
     ]
   }
 
+  # Re-run nur bei YAML-Änderungen
   triggers = {
-    dir_sha1 = sha1(join("", [
-      for f in fileset("${path.module}/kubernetes-objects", "*") :
+    objects_hash = sha1(join("", [
+      for f in fileset("${path.module}/kubernetes-objects", "**") :
       filesha1("${path.module}/kubernetes-objects/${f}")
     ]))
   }
