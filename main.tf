@@ -111,7 +111,7 @@ EOCONFIG
       flavor_name        = local.flavor_name
       image_name         = local.image_name
       system_user        = local.system_user
-      boot_volume_size   = 20
+      boot_volume_size   = 21
       rke2_version       = local.rke2_version
       rke2_volume_size   = 99
       rke2_volume_device = "/dev/vdb"
