@@ -143,7 +143,7 @@ EOCONFIG
 }
 
 ##############################################################
-# Application Outputs
+# Application Outputs##
 ###########################################################
 
 # Optional: Port deiner App (ändern wenn du z.B. 443/8080 nutzt)
