@@ -41,7 +41,7 @@ locals {
 
   cluster_name     = lower("${var.project}-k8s")
   image_name       = "ubuntu-22.04-jammy-server-cloud-image-amd64"
-  flavor_name      = "m1.medium"
+  flavor_name      = "m1.large"
   system_user      = "ubuntu"
   floating_ip_pool = "ext_net"
 
@@ -89,9 +89,9 @@ module "rke2" {
     flavor_name        = local.flavor_name
     image_name         = local.image_name
     system_user        = local.system_user
-    boot_volume_size   = 6
+    boot_volume_size   = 20
     rke2_version       = local.rke2_version
-    rke2_volume_size   = 10
+    rke2_volume_size   = 50
     rke2_volume_device = "/dev/vdb"
     rke2_config        = <<EOF
 write-kubeconfig-mode: "0644"
@@ -105,9 +105,9 @@ EOF
       flavor_name        = local.flavor_name
       image_name         = local.image_name
       system_user        = local.system_user
-      boot_volume_size   = 10
+      boot_volume_size   = 20
       rke2_version       = local.rke2_version
-      rke2_volume_size   = 100
+      rke2_volume_size   = 200
       rke2_volume_device = "/dev/vdb"
     }
   ]
