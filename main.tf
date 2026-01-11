@@ -1,5 +1,5 @@
 ###########################################################
-# main.tf (OPTIMIERT)
+# main.tf (OPTIMAL)
 ###########################################################
 
 terraform {
@@ -36,7 +36,7 @@ variable "ssh_private_key" {
   sensitive = true
 }
 
-# Cluster-Warten optional (Performance!)
+# Optional: wait for full cluster readiness (slow). Keep false for speed.
 variable "wait_ready" {
   type    = bool
   default = false
@@ -94,7 +94,7 @@ module "rke2" {
   ssh_authorized_keys = [trimspace(var.ssh_public_key)]
   floating_pool       = local.floating_ip_pool
 
-  # ⚠️ Offen – OK für Test, NICHT für Prod
+  # Offen für Test
   rules_ssh_cidr = ["0.0.0.0/0"]
   rules_k8s_cidr = ["0.0.0.0/0"]
 
@@ -123,7 +123,7 @@ EOCONFIG
     boot_volume_size = 22
     rke2_version     = local.rke2_version
 
-    # ❗ FIX: unter OpenStack-Limit bleiben
+    # ✅ Unter dem 100GiB-Limit bleiben
     rke2_volume_size   = 99
     rke2_volume_device = "/dev/vdb"
   }]
@@ -131,7 +131,6 @@ EOCONFIG
   backup_schedule  = "0 6 1 * *"
   backup_retention = 20
 
-  # ⚡ Ressourcenschonend
   kube_apiserver_resources          = { requests = { cpu = "75m", memory = "128Mi" } }
   kube_scheduler_resources          = { requests = { cpu = "75m", memory = "128Mi" } }
   kube_controller_manager_resources = { requests = { cpu = "75m", memory = "128Mi" } }
@@ -139,11 +138,13 @@ EOCONFIG
 
   dns_nameservers4 = [local.dns_server]
 
-  # ⚡ Performance-FLAGS
+  # ✅ Performance / Stabilität
   ff_autoremove_agent = "30s"
-  ff_write_kubeconfig = true
   ff_native_backup    = true
   ff_wait_ready       = var.wait_ready
+
+  # ✅ WICHTIG: verhindert den langsamen rsync-wait-loop im Apply
+  ff_write_kubeconfig = false
 
   identity_endpoint     = local.auth_url
   object_store_endpoint = local.object_store_url
@@ -156,7 +157,7 @@ EOCONFIG
 }
 
 #######################
-# Outputs (sauber & nützlich)
+# Outputs
 #######################
 
 output "floating_ip" {
@@ -165,7 +166,7 @@ output "floating_ip" {
 }
 
 output "application_url" {
-  description = "Application base URL"
+  description = "Base URL (Ingress muss separat gesetzt sein)"
   value       = "http://${module.rke2.external_ip}"
 }
 
