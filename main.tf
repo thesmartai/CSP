@@ -1,5 +1,5 @@
 ###########################################################
-# main.tf#
+# main.tf
 ###########################################################
 
 terraform {
@@ -111,7 +111,7 @@ EOCONFIG
       flavor_name        = local.flavor_name
       image_name         = local.image_name
       system_user        = local.system_user
-      boot_volume_size   = 21
+      boot_volume_size   = 22
       rke2_version       = local.rke2_version
       rke2_volume_size   = 99
       rke2_volume_device = "/dev/vdb"
@@ -142,6 +142,31 @@ EOCONFIG
   }
 }
 
+###########################################################
+# Application Outputs
+###########################################################
+
+# Optional: Port deiner App (ändern wenn du z.B. 443/8080 nutzt)
+variable "app_port" {
+  type    = number
+  default = 80
+}
+
+# Optional: Pfad deiner App (z.B. "/")
+variable "app_path" {
+  type    = string
+  default = "/"
+}
+
+# Public URL für deine Application
+output "application_url" {
+  value = "http://${module.rke2.external_ip}:${var.app_port}${var.app_path}"
+}
+
+# Nur die IP (falls du sie separat brauchst)
+output "application_ip" {
+  value = module.rke2.external_ip
+}
 
 output "floating_ip" {
   value = module.rke2.external_ip
@@ -162,3 +187,4 @@ output "domain_name" {
   value = var.domain_name
 
 }
+
