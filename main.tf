@@ -162,3 +162,8 @@ output "domain_name" {
   value = var.domain_name
 
 }
+
+# public external IP of the RKE2 cluster
+output "rke2_external_ip" {
+  value = module.rke2.external_ip
+}
