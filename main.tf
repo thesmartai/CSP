@@ -119,7 +119,7 @@ EOF
 
   dns_nameservers4    = [local.dns_server]
   ff_autoremove_agent = "30s"
-  ff_write_kubeconfig = true
+  ff_write_kubeconfig = false # Wir holen uns das Kubeconfig via Terraform Output
   ff_native_backup    = true
   ff_wait_ready       = true
 
@@ -131,6 +131,12 @@ EOF
       "*" = { endpoint = ["https://harbor.cs.hs-fulda.de"] }
     }
   }
+}
+
+# Wir holen uns das Kubeconfig via Terraform Output
+output "kubeconfig" {
+  value     = module.rke2.kubeconfig
+  sensitive = true
 }
 
 output "floating_ip" {
