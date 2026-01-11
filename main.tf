@@ -142,6 +142,31 @@ EOCONFIG
   }
 }
 
+###########################################################
+# Application Outputs
+###########################################################
+
+# Optional: Port deiner App (ändern wenn du z.B. 443/8080 nutzt)
+variable "app_port" {
+  type    = number
+  default = 80
+}
+
+# Optional: Pfad deiner App (z.B. "/")
+variable "app_path" {
+  type    = string
+  default = "/"
+}
+
+# Public URL für deine Application
+output "application_url" {
+  value = "http://${module.rke2.external_ip}:${var.app_port}${var.app_path}"
+}
+
+# Nur die IP (falls du sie separat brauchst)
+output "application_ip" {
+  value = module.rke2.external_ip
+}
 
 output "floating_ip" {
   value = module.rke2.external_ip
@@ -163,7 +188,3 @@ output "domain_name" {
 
 }
 
-# public external IP of the RKE2 cluster
-output "rke2_external_ip" {
-  value = module.rke2.external_ip
-}
