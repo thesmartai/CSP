@@ -53,8 +53,10 @@ resource "null_resource" "deploy_k8s_stack" {
       "echo '--- Helm (falls fehlt) ---'",
       "command -v helm >/dev/null 2>&1 || (curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash)",
 
-      "echo '--- Base Resources ---'",
-      "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
+      # Storage & Secrets 
+      "echo '--- Applying Storage & Secrets into Namespace immich ---'",
+      # "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml", # Wird nicht mehr benötigt, da Dynamic Provisioning über Cinder genutzt wird
+
       "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolumeClaim.yaml -n immich",
       "kubectl apply -f /home/ubuntu/k8s-objects/immich-db-secret.yaml -n immich",
 
