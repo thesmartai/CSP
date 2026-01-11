@@ -142,11 +142,6 @@ EOCONFIG
   }
 }
 
-# Wir holen uns das Kubeconfig via Terraform Output
-output "kubeconfig" {
-  value     = module.rke2.kubeconfig
-  sensitive = true
-}
 
 output "floating_ip" {
   value = module.rke2.external_ip
