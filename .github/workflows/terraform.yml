@@ -4,13 +4,6 @@ on:
   pull_request:
   push:
     branches: ["main"]
-  workflow_dispatch:
-    inputs:
-      confirm_destroy:
-        description: "Type DESTROY to confirm terraform destroy"
-        required: false
-        default: ""
-
 concurrency:
   group: terraform-production
   cancel-in-progress: false
