@@ -15,7 +15,10 @@ terraform {
 
 variable "project" { type = string }
 variable "username" { type = string }
-variable "password" { type = string }
+variable "password" {
+  type      = string
+  sensitive = true
+}
 variable "domain_name" { type = string }
 
 # Keys kommen aus GitHub Secrets
@@ -137,10 +140,6 @@ output "floating_ip" {
   value = module.rke2.external_ip
 }
 
-output "Username" {
-  value = var.username
-}
-
 #variable "project" { type = string }
 output "project" {
   value = var.project
@@ -153,7 +152,8 @@ output "username" {
 }
 #variable "password" { type = string }
 output "password" {
-  value = var.password
+  value     = var.password
+  sensitive = true
 
 }
 #variable "domain_name" { type = string }
