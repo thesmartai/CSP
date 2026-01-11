@@ -18,12 +18,12 @@ locals {
   floating_ip_pool = "ext_net"
 
   # SSH Keys
-  ssh_pubkey_file  = "~/.ssh/id_ed25519.pub"
+  ssh_pubkey_file = "~/.ssh/id_ed25519.pub"
   # für den Upload der Dateien
-  ssh_private_key  = "~/.ssh/id_ed25519"
+  ssh_private_key = "~/.ssh/id_ed25519"
 
-  dns_server       = "10.33.16.100"
-  rke2_version     = "v1.30.3+rke2r1"
+  dns_server   = "10.33.16.100"
+  rke2_version = "v1.30.3+rke2r1"
 
   kubeconfig_path = "${path.module}/${lower(var.project)}-k8s.rke2.yaml"
 }
@@ -36,33 +36,33 @@ module "rke2" {
   name                = local.cluster_name
   ssh_authorized_keys = [file(local.ssh_pubkey_file)]
   floating_pool       = local.floating_ip_pool
-  rules_ssh_cidr      = [ "0.0.0.0/0" ]
-  rules_k8s_cidr      = [ "0.0.0.0/0" ]
+  rules_ssh_cidr      = ["0.0.0.0/0"]
+  rules_k8s_cidr      = ["0.0.0.0/0"]
 
   servers = [{
-    name = "controller"
-    flavor_name = local.flavor_name
-    image_name  = local.image_name
-    system_user = local.system_user
-    boot_volume_size = 6
-    rke2_version     = local.rke2_version
-    rke2_volume_size = 10
+    name               = "controller"
+    flavor_name        = local.flavor_name
+    image_name         = local.image_name
+    system_user        = local.system_user
+    boot_volume_size   = 6
+    rke2_version       = local.rke2_version
+    rke2_volume_size   = 10
     rke2_volume_device = "/dev/vdb"
-    rke2_config = <<EOF
+    rke2_config        = <<EOF
 write-kubeconfig-mode: "0644"
 EOF
   }]
 
   agents = [
     {
-      name        = "worker"
-      nodes_count = 1
-      flavor_name = local.flavor_name
-      image_name  = local.image_name
-      system_user = local.system_user
-      boot_volume_size = 10
-      rke2_version     = local.rke2_version
-      rke2_volume_size = 99
+      name               = "worker"
+      nodes_count        = 1
+      flavor_name        = local.flavor_name
+      image_name         = local.image_name
+      system_user        = local.system_user
+      boot_volume_size   = 10
+      rke2_version       = local.rke2_version
+      rke2_volume_size   = 99
       rke2_volume_device = "/dev/vdb"
     }
   ]
@@ -94,7 +94,7 @@ EOF
 
   registries = {
     mirrors = {
-      "*": { endpoint = ["https://harbor.cs.hs-fulda.de"] }
+      "*" : { endpoint = ["https://harbor.cs.hs-fulda.de"] }
     }
   }
 }
