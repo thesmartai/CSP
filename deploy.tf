@@ -22,7 +22,7 @@ resource "null_resource" "deploy_k8s_stack" {
   # Zielordner sicher anlegen
   provisioner "remote-exec" {
     inline = [
-      "set -euo pipefail",
+      "set -eu pipefail",
       "mkdir -p /home/ubuntu/k8s-objects"
     ]
   }
