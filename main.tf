@@ -17,9 +17,9 @@ terraform {
 # Variables
 #######################
 
-variable "project"      { type = string }
-variable "username"     { type = string }
-variable "domain_name"  { type = string }
+variable "project" { type = string }
+variable "username" { type = string }
+variable "domain_name" { type = string }
 
 variable "password" {
   type      = string
@@ -68,16 +68,16 @@ locals {
 #######################
 
 provider "openstack" {
-  insecure           = local.insecure
-  auth_url           = local.auth_url
-  region             = local.region
-  cacert_file        = local.cacert_file
-  endpoint_type      = "public"
+  insecure      = local.insecure
+  auth_url      = local.auth_url
+  region        = local.region
+  cacert_file   = local.cacert_file
+  endpoint_type = "public"
 
-  tenant_name        = var.project
-  user_name          = var.username
-  password           = var.password
-  user_domain_name   = var.domain_name
+  tenant_name         = var.project
+  user_name           = var.username
+  password            = var.password
+  user_domain_name    = var.domain_name
   project_domain_name = var.domain_name
 }
 
@@ -99,12 +99,12 @@ module "rke2" {
   rules_k8s_cidr = ["0.0.0.0/0"]
 
   servers = [{
-    name               = "controller"
-    flavor_name        = local.flavor_name
-    image_name         = local.image_name
-    system_user        = local.system_user
-    boot_volume_size   = 20
-    rke2_version       = local.rke2_version
+    name             = "controller"
+    flavor_name      = local.flavor_name
+    image_name       = local.image_name
+    system_user      = local.system_user
+    boot_volume_size = 20
+    rke2_version     = local.rke2_version
 
     rke2_volume_size   = 50
     rke2_volume_device = "/dev/vdb"
@@ -115,13 +115,13 @@ EOCONFIG
   }]
 
   agents = [{
-    name               = "worker"
-    nodes_count        = 1
-    flavor_name        = local.flavor_name
-    image_name         = local.image_name
-    system_user        = local.system_user
-    boot_volume_size   = 22
-    rke2_version       = local.rke2_version
+    name             = "worker"
+    nodes_count      = 1
+    flavor_name      = local.flavor_name
+    image_name       = local.image_name
+    system_user      = local.system_user
+    boot_volume_size = 22
+    rke2_version     = local.rke2_version
 
     # ❗ FIX: unter OpenStack-Limit bleiben
     rke2_volume_size   = 99
