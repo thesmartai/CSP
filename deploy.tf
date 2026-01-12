@@ -32,8 +32,6 @@ resource "null_resource" "deploy_k8s_stack" {
 
       # Storage & Secrets
       "echo '--- Applying Storage & Secrets into Namespace immich ---'",
-      "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
-
       "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolumeClaim.yaml -n immich",
 
       "kubectl apply -f /home/ubuntu/k8s-objects/immich-db-secret.yaml -n immich",
