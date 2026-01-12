@@ -40,18 +40,10 @@ env:
   TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
   TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-  # (Optional) OpenStack Auth ENV
-  OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
-  OS_USERNAME: ${{ secrets.OS_USERNAME }}
-  OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
-  OS_PROJECT_NAME: ${{ secrets.OS_PROJECT }}
 
-  OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME || 'Default' }}
-  OS_PROJECT_DOMAIN_NAME: ${{ secrets.OS_PROJECT_DOMAIN_NAME || 'Default' }}
 
-  OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
-  OS_INTERFACE: ${{ secrets.OS_INTERFACE || 'public' }}
-  OS_IDENTITY_API_VERSION: "3"
+
+
 
 jobs:
   plan:
@@ -188,61 +180,6 @@ jobs:
 
       - name: Apply
         run: terraform apply -auto-approve -input=false tfplan
-
-      - name: Persist local state (persistent)
-        if: always()
-        run: |
-          set -euo pipefail
-          mkdir -p "$STATE_DIR"
-          if [ -f terraform.tfstate.d/production/terraform.tfstate ]; then
-            cp terraform.tfstate.d/production/terraform.tfstate "$STATE_DIR/terraform.tfstate"
-          elif [ -f terraform.tfstate ]; then
-            cp terraform.tfstate "$STATE_DIR/terraform.tfstate"
-          fi
-
-  destroy:
-    name: Terraform Destroy
-    runs-on: self-hosted
-    environment: production
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_destroy == 'DESTROY'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-
-      - name: Install deps for kubeconfig generation (rsync + yq)
-        run: |
-          set -euo pipefail
-          if ! command -v rsync >/dev/null 2>&1 || ! command -v yq >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y rsync ca-certificates curl
-            if ! command -v yq >/dev/null 2>&1; then
-              sudo curl -fsSL -o /usr/local/bin/yq \
-                https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-              sudo chmod +x /usr/local/bin/yq
-            fi
-          fi
-          rsync --version
-          yq --version
-
-      - name: Restore local state (persistent)
-        run: |
-          set -euo pipefail
-          mkdir -p "$STATE_DIR"
-          mkdir -p terraform.tfstate.d/production
-          if [ -f "$STATE_DIR/terraform.tfstate" ]; then
-            cp "$STATE_DIR/terraform.tfstate" terraform.tfstate.d/production/terraform.tfstate
-          fi
-
-      - name: Init
-        run: terraform init
-
-      - name: Select workspace (create if missing)
-        run: |
-          set -euo pipefail
-          terraform workspace select production || terraform workspace new production
-
-      - name: Destroy
-        run: terraform destroy -auto-approve -input=false
 
       - name: Persist local state (persistent)
         if: always()
