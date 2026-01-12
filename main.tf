@@ -12,18 +12,16 @@ variable "os_username" {
 
 variable "os_password" {
   type      = string
-  sensitive = true
+
 }
 
 # Inhalte aus GitHub Secrets (keine Dateipfade!)
 variable "ssh_public_key" {
-  type      = string
-  sensitive = true
+  type = string
 }
 
 variable "ssh_private_key" {
   type      = string
-  sensitive = true
 }
 
 locals {
