@@ -1,6 +1,6 @@
 resource "null_resource" "deploy_k8s_stack" {
   depends_on = [module.rke2]
-
+####
   connection {
     type        = "ssh"
     user        = "ubuntu"
