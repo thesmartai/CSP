@@ -30,14 +30,14 @@ env:
   # Persistenter lokaler State-Pfad auf dem Runner
   STATE_DIR: /home/ubuntu/ahmad_info/state/production
 
-  # Terraform Variablen (GitHub Repo Secrets aus deinem Screenshot)
+  # Terraform Variablen (GitHub Repo Secrets)
   TF_VAR_os_project: ${{ secrets.OS_PROJECT }}
   TF_VAR_os_username: ${{ secrets.OS_USERNAME }}
   TF_VAR_os_password: ${{ secrets.OS_PASSWORD }}
   TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
   TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-  # (Optional) OpenStack Auth ENV – schadet nicht, auch wenn Provider in TF alles setzt
+  # (Optional) OpenStack Auth ENV
   OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
   OS_USERNAME: ${{ secrets.OS_USERNAME }}
   OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
@@ -58,6 +58,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
+
+      - name: Install deps for kubeconfig generation (rsync + yq)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rsync ca-certificates curl
+          sudo curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          rsync --version
+          yq --version
 
       - name: Debug runner/workspace
         run: |
@@ -130,6 +140,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
 
+      - name: Install deps for kubeconfig generation (rsync + yq)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rsync ca-certificates curl
+          sudo curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          rsync --version
+          yq --version
+
       - name: Restore local state (persistent)
         run: |
           set -euo pipefail
@@ -167,3 +187,52 @@ jobs:
             cp terraform.tfstate "$STATE_DIR/terraform.tfstate"
           fi
 
+  destroy:
+    name: Terraform Destroy
+    runs-on: self-hosted
+    environment: production
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_destroy == 'DESTROY'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Install deps for kubeconfig generation (rsync + yq)
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rsync ca-certificates curl
+          sudo curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          rsync --version
+          yq --version
+
+      - name: Restore local state (persistent)
+        run: |
+          set -euo pipefail
+          mkdir -p "$STATE_DIR"
+          mkdir -p terraform.tfstate.d/production
+          if [ -f "$STATE_DIR/terraform.tfstate" ]; then
+            cp "$STATE_DIR/terraform.tfstate" terraform.tfstate.d/production/terraform.tfstate
+          fi
+
+      - name: Init
+        run: terraform init
+
+      - name: Select workspace (create if missing)
+        run: |
+          set -euo pipefail
+          terraform workspace select production || terraform workspace new production
+
+      - name: Destroy
+        run: terraform destroy -auto-approve -input=false
+
+      - name: Persist local state (persistent)
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$STATE_DIR"
+          if [ -f terraform.tfstate.d/production/terraform.tfstate ]; then
+            cp terraform.tfstate.d/production/terraform.tfstate "$STATE_DIR/terraform.tfstate"
+          elif [ -f terraform.tfstate ]; then
+            cp terraform.tfstate "$STATE_DIR/terraform.tfstate"
+          fi
