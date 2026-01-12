@@ -102,19 +102,19 @@ module "rke2" {
   rules_k8s_cidr = ["0.0.0.0/0"]
 
   servers = [{
-
     name               = "controller"
     flavor_name        = local.flavor_name
     image_name         = local.image_name
     system_user        = local.system_user
     boot_volume_size   = 6
     rke2_version       = local.rke2_version
-    rke2_volume_size   = 10
+    rke2_volume_size   = 50 # <-- WICHTIG: >= aktuelle Größe (50)
     rke2_volume_device = "/dev/vdb"
     rke2_config        = <<EOF
 write-kubeconfig-mode: "0644"
 EOF
   }]
+
 
   agents = [
     {
