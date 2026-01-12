@@ -27,10 +27,10 @@ resource "null_resource" "deploy_k8s_stack" {
       # Namespace explizit erstellen
       "kubectl create namespace immich --dry-run=client -o yaml | kubectl apply -f -",
 
-      # Helm installierenööö
+      # Helm installieren
       "if ! command -v helm &> /dev/null; then curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh; fi",
 
-      # Storage & Secrets 
+      # Storage & Secrets
       "echo '--- Applying Storage & Secrets into Namespace immich ---'",
       "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
 
@@ -43,7 +43,7 @@ resource "null_resource" "deploy_k8s_stack" {
       # redis kommt auch in den Namespace immich, damit der Hostname 'redis-master' einfach gefunden wird
       "helm upgrade --install redis oci://registry-1.docker.io/bitnamicharts/redis --namespace immich --wait",
 
-      # CloudNativePG Operator 
+      # CloudNativePG Operator
       "echo '--- Installing CloudNativePG Operator ---'",
       "helm repo add cnpg https://cloudnative-pg.github.io/charts",
       "helm repo update",
