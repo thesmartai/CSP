@@ -1,19 +1,15 @@
-# Dieses PersistentVolume wird nicht mehr benötigt, da wir nun Dynamic Provisioning
-# über OpenStack (Cinder/Ceph) verwenden.
-# Die Speicheranforderung wird automatisch durch den StorageClass im PVC erfüllt.
-
-# apiVersion: v1
-# kind: PersistentVolume
-# metadata:
-#   name: task-pv-volume
-#   labels:
-#     type: local
-# spec:
-#   storageClassName: manual
-#   capacity:
-#     # GEÄNDERT: Kapazität auf 50Gi erhöht, um dem neuen PVC-Request zu entsprechen.
-#     storage: 50Gi
-#   accessModes:
-#     - ReadWriteOnce # ReadWriteOncePod
-#   hostPath: # rather network ressource (AWS-Bucket...) than storage on the Cluster
-#     path: "/mnt/data"
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: task-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    # GEÄNDERT: Kapazität auf 50Gi erhöht, um dem neuen PVC-Request zu entsprechen.
+    storage: 50Gi
+  accessModes:
+    - ReadWriteOnce # ReadWriteOncePod
+  hostPath: # rather network ressource (AWS-Bucket...) than storage on the Cluster
+    path: "/mnt/data"

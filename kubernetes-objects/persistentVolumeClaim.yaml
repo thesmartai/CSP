@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: task-pv-claim
 spec:
-  storageClassName: csi-cinder-retain
+  storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
