@@ -37,13 +37,16 @@ variable "ssh_private_key" {
 # Locals
 ############################
 locals {
+  # WICHTIG: Name darf NICHT sensitive sein (sonst bricht for_each im Modul)
+  project_name = lower(nonsensitive(var.os_project))
+  cluster_name = "${local.project_name}-k8s"
+
   insecure         = true
   auth_url         = "https://private-cloud.informatik.hs-fulda.de:5000"
   object_store_url = "https://10.32.4.32:443"
   region           = "RegionOne"
   cacert_file      = "./os-trusted-cas"
 
-  cluster_name     = lower("${var.os_project}-k8s")
   image_name       = "ubuntu-22.04-jammy-server-cloud-image-amd64"
   flavor_name      = "m1.medium"
   system_user      = "ubuntu"
@@ -52,7 +55,7 @@ locals {
   dns_server   = "10.33.16.100"
   rke2_version = "v1.30.3+rke2r1"
 
-  kubeconfig_path = "${path.module}/${lower(var.os_project)}-k8s.rke2.yaml"
+  kubeconfig_path = "${path.module}/${local.cluster_name}.rke2.yaml"
 }
 
 ############################
@@ -87,7 +90,9 @@ module "rke2" {
 
   insecure  = local.insecure
   bootstrap = true
-  name      = local.cluster_name
+
+  # WICHTIG: name ist NICHT sensitive (siehe locals.cluster_name)
+  name = local.cluster_name
 
   # GitHub Secret: SSH_PUBLIC_KEY (Inhalt, kein Pfad)
   ssh_authorized_keys = [trimspace(var.ssh_public_key)]
@@ -97,6 +102,7 @@ module "rke2" {
   rules_k8s_cidr = ["0.0.0.0/0"]
 
   servers = [{
+
     name               = "controller"
     flavor_name        = local.flavor_name
     image_name         = local.image_name
