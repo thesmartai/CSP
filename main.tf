@@ -1,5 +1,5 @@
 ############################
-# Variables (GitHub Secrets)#####
+# Variables (GitHub Secrets)
 ############################
 variable "os_project" {
   type = string
@@ -79,7 +79,7 @@ EOF
     system_user        = local.system_user
     boot_volume_size   = 10
     rke2_version       = local.rke2_version
-    rke2_volume_size   = 95
+    rke2_volume_size   = 90
     rke2_volume_device = "/dev/vdb"
   }]
 
