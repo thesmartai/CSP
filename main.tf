@@ -1,5 +1,5 @@
 ############################
-# Variables (GitHub Secrets)
+# Variables (GitHub Secrets)#####
 ############################
 variable "os_project" {
   type = string
