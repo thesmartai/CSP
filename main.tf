@@ -51,7 +51,7 @@ module "rke2" {
   insecure            = local.insecure
   bootstrap           = true
   name                = local.cluster_name
-  ssh_authorized_keys = var.ssh_public_key
+  ssh_authorized_keys = [var.ssh_public_key]
   floating_pool       = local.floating_ip_pool
 
   rules_ssh_cidr = ["0.0.0.0/0"]
