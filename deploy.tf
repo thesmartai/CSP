@@ -1,6 +1,6 @@
 resource "null_resource" "deploy_k8s_stack" {
   depends_on = [module.rke2]
-####
+  ####
   connection {
     type        = "ssh"
     user        = "ubuntu"
@@ -64,10 +64,10 @@ resource "null_resource" "deploy_k8s_stack" {
 
       # Warten auf LoadBalancer IP
       "echo '--- Warte auf Zuweisung der Floating IP für Envoy... ---'",
-      
+
       # Schleife: Prüft 30x alle 10 Sekunden, ob die IP da ist
       "for i in $(seq 1 30); do LB_IP=$(kubectl get svc envoy -n projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null); if [ -n \"$LB_IP\" ]; then echo \"SUCCESS: Ingress IP ist: $LB_IP\"; break; fi; echo \"Warte auf IP... ($i/30)\"; sleep 10; done",
-      
+
       # Zur Sicherheit nochmal den ganzen Status ausgeben
       "kubectl get svc envoy -n projectcontour",
 

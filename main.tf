@@ -39,7 +39,7 @@ locals {
 
   kubeconfig_path = "${path.module}/${lower(var.os_project)}-k8s.rke2.yaml"
 
-  ssh_private_key  = "~/.ssh/id_ed25519" 
+  ssh_private_key = "~/.ssh/id_ed25519"
 }
 
 module "rke2" {
