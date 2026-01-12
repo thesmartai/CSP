@@ -2,13 +2,12 @@
 # Variables (GitHub Secrets)
 ############################
 variable "os_project" {
-  type      = string
-  sensitive = true
+  type = string
+
 }
 
 variable "os_username" {
-  type      = string
-  sensitive = true
+  type = string
 }
 
 variable "os_password" {
