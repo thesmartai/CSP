@@ -20,9 +20,6 @@ variable "ssh_public_key" {
   type = string
 }
 
-variable "ssh_private_key" {
-  type = string
-}
 
 locals {
   insecure         = true
@@ -41,6 +38,8 @@ locals {
   rke2_version = "v1.30.3+rke2r1"
 
   kubeconfig_path = "${path.module}/${lower(var.os_project)}-k8s.rke2.yaml"
+
+  ssh_private_key  = "~/.ssh/id_ed25519" 
 }
 
 module "rke2" {
