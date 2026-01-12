@@ -3,7 +3,7 @@
 ###########################################################
 
 resource "null_resource" "deploy_k8s_stack" {
-  depends_on = [module.rke2]
+  depends_on = [module.rke2, null_resource.fetch_kubeconfig]
 
   connection {
     type        = "ssh"
@@ -69,5 +69,44 @@ resource "null_resource" "deploy_k8s_stack" {
       for f in fileset("${path.module}/kubernetes-objects", "*") :
       filesha1("${path.module}/kubernetes-objects/${f}")
     ]))
+  }
+}
+
+resource "null_resource" "fetch_kubeconfig" {
+  depends_on = [module.rke2]
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<EOT
+set -euo pipefail
+
+key_file=$(mktemp)
+cleanup() { rm -f "$key_file"; }
+trap cleanup EXIT
+
+cat >"$key_file" <<'KEY'
+${var.ssh_private_key}
+KEY
+chmod 600 "$key_file"
+
+for i in $(seq 1 30); do
+  if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$key_file" ubuntu@${module.rke2.external_ip} "sudo test -s /etc/rancher/rke2/rke2.yaml"; then
+    scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i "$key_file" ubuntu@${module.rke2.external_ip}:/etc/rancher/rke2/rke2.yaml ${local.kubeconfig_path}
+    chmod 600 ${local.kubeconfig_path}
+    echo "Kubeconfig written to ${local.kubeconfig_path}"
+    exit 0
+  fi
+  echo "Waiting for kubeconfig... ($i/30)"
+  sleep 10
+done
+
+echo "Timeout waiting for kubeconfig."
+exit 1
+EOT
+  }
+
+  triggers = {
+    external_ip = module.rke2.external_ip
+    rke2_version = local.rke2_version
   }
 }
