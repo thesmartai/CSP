@@ -106,7 +106,7 @@ EOT
   }
 
   triggers = {
-    external_ip = module.rke2.external_ip
+    external_ip  = module.rke2.external_ip
     rke2_version = local.rke2_version
   }
 }
