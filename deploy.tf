@@ -5,7 +5,7 @@ resource "null_resource" "deploy_k8s_stack" {
     type        = "ssh"
     user        = "ubuntu"
     private_key = var.ssh_private_key
-    host        = module.rke2.external_ip
+    host        = module.rke2.bootstrap_floating_ip
   }
 
   provisioner "remote-exec" {
