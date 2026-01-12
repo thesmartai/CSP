@@ -1,56 +1,28 @@
-controllers:
-  main:
-    containers:
-      main:
-        image:
-          tag: v2.3.1
-        env:
-          DB_HOSTNAME: immich-database-rw
-          DB_PORT: "5432"
-          DB_USERNAME: immich
-          DB_PASSWORD:
-            valueFrom:
-              secretKeyRef:
-                name: immich-db-app
-                key: password
-          DB_DATABASE_NAME: immich
-          REDIS_HOSTNAME: redis-master
-          REDIS_PORT: "6379"
-          REDIS_PASSWORD:
-            valueFrom:
-              secretKeyRef:
-                name: redis
-                key: redis-password
-        # NEU: Ressourcen-Limits hinzugefügt, um Eviction (Zwangsbeendigung) zu verhindern.
-        # Ephemeral-Storage (lokaler, temporärer Speicher) ist hier kritisch.
-        resources:
-          requests:
-            cpu: 100m
-            memory: 512Mi
-            ephemeral-storage: 1Gi  # Fordert 1 GiB lokalen Speicher für Logs/Cache an.
-          limits:
-            cpu: 1000m
-            memory: 4Gi
-            ephemeral-storage: 2Gi # GEÄNDERT: Setzt ein Limit, um den Knoten zu schützen..
+# Immich Version (wird im Script zusätzlich per --set image.tag überschrieben)
+image:
+  tag: v2.4.0
+
+# Diese ENV-Variablen werden an alle Immich-Components gegeben (server/microservices/ml)
+env:
+  DB_HOSTNAME: immich-database-rw
+  DB_PORT: "5432"
+  DB_USERNAME: immich
+  DB_DATABASE_NAME: immich
+  DB_PASSWORD:
+    valueFrom:
+      secretKeyRef:
+        name: immich-db-app
+        key: password
+
+# Library muss als existingClaim gesetzt werden
 immich:
-  metrics:
-    # Enabling this will create the service monitors needed to monitor immich with the prometheus operator
-    enabled: false
   persistence:
-    # Main data store for all photos shared between different components.
     library:
-      # Automatically creating the library volume is not supported by this chart
-      # You have to specify an existing PVC to use
       existingClaim: task-pv-claim
-  # configuration is immich-config.json converted to yaml
-  # ref: https://immich.app/docs/install/config-file/
-  #
-  configuration: {}
-    # trash:
-    #   enabled: false
-    #   days: 30
-    # storageTemplate:
-    #   enabled: true
-    #   template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+
+# Seit chart 0.10.x: Valkey statt bitnami/redis
 valkey:
-  enabled: false
+  enabled: true
+
+# Optional: wenn du eigene Immich config willst (immich-config.json -> yaml)
+configuration: {}
