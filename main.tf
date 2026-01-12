@@ -11,7 +11,7 @@ variable "os_username" {
 }
 
 variable "os_password" {
-  type      = string
+  type = string
 
 }
 
@@ -21,7 +21,7 @@ variable "ssh_public_key" {
 }
 
 variable "ssh_private_key" {
-  type      = string
+  type = string
 }
 
 locals {
