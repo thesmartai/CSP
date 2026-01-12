@@ -1,43 +1,100 @@
 ###########################################################
 #
+# main.tf
 #
 ###########################################################
 
+############################
+# Variables (GitHub Secrets)
+############################
+variable "os_project" {
+  type      = string
+  sensitive = true
+}
+
+variable "os_username" {
+  type      = string
+  sensitive = true
+}
+
+variable "os_password" {
+  type      = string
+  sensitive = true
+}
+
+# Inhalte aus GitHub Secrets (keine Dateipfade!)
+variable "ssh_public_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "ssh_private_key" {
+  type      = string
+  sensitive = true
+}
+
+############################
+# Locals
+############################
 locals {
-  # Konfiguration
   insecure         = true
   auth_url         = "https://private-cloud.informatik.hs-fulda.de:5000"
   object_store_url = "https://10.32.4.32:443"
   region           = "RegionOne"
   cacert_file      = "./os-trusted-cas"
 
-  cluster_name     = lower("${var.project}-k8s")
+  cluster_name     = lower("${var.os_project}-k8s")
   image_name       = "ubuntu-22.04-jammy-server-cloud-image-amd64"
   flavor_name      = "m1.medium"
   system_user      = "ubuntu"
   floating_ip_pool = "ext_net"
 
-  # SSH Keys
-  ssh_pubkey_file = "~/.ssh/id_ed25519.pub"
-  # für den Upload der Dateien
-  ssh_private_key = "~/.ssh/id_ed25519"
-
   dns_server   = "10.33.16.100"
   rke2_version = "v1.30.3+rke2r1"
 
-  kubeconfig_path = "${path.module}/${lower(var.project)}-k8s.rke2.yaml"
+  kubeconfig_path = "${path.module}/${lower(var.os_project)}-k8s.rke2.yaml"
 }
 
+############################
+# Terraform / Provider
+############################
+terraform {
+  required_version = ">= 0.14.0"
+
+  required_providers {
+    openstack = {
+      source  = "terraform-provider-openstack/openstack"
+      version = ">= 2.0.0"
+    }
+  }
+}
+
+provider "openstack" {
+  insecure    = local.insecure
+  tenant_name = var.os_project
+  user_name   = var.os_username
+  password    = var.os_password
+  auth_url    = local.auth_url
+  region      = local.region
+  cacert_file = local.cacert_file
+}
+
+############################
+# RKE2 Cluster
+############################
 module "rke2" {
   source = "git::https://github.com/srieger1/terraform-openstack-rke2.git?ref=hsfulda-example"
 
-  insecure            = local.insecure
-  bootstrap           = true
-  name                = local.cluster_name
-  ssh_authorized_keys = [file(local.ssh_pubkey_file)]
-  floating_pool       = local.floating_ip_pool
-  rules_ssh_cidr      = ["0.0.0.0/0"]
-  rules_k8s_cidr      = ["0.0.0.0/0"]
+  insecure  = local.insecure
+  bootstrap = true
+  name      = local.cluster_name
+
+  # GitHub Secret: SSH_PUBLIC_KEY (Inhalt, kein Pfad)
+  ssh_authorized_keys = [trimspace(var.ssh_public_key)]
+
+  floating_pool  = local.floating_ip_pool
+  rules_ssh_cidr = ["0.0.0.0/0"]
+  rules_k8s_cidr = ["0.0.0.0/0"]
 
   servers = [{
     name               = "controller"
@@ -99,31 +156,6 @@ EOF
   }
 }
 
-variable "project" { type = string }
-variable "username" { type = string }
-variable "password" { type = string }
-
 output "floating_ip" {
   value = module.rke2.external_ip
-}
-
-provider "openstack" {
-  insecure    = local.insecure
-  tenant_name = var.project
-  user_name   = var.username
-  password    = var.password
-  auth_url    = local.auth_url
-  region      = local.region
-  cacert_file = local.cacert_file
-}
-
-terraform {
-  required_version = ">= 0.14.0"
-
-  required_providers {
-    openstack = {
-      source  = "terraform-provider-openstack/openstack"
-      version = ">= 2.0.0"
-    }
-  }
 }
