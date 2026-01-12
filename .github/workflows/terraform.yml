@@ -27,6 +27,9 @@ env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
 
+  # Verhindert Hänger durch SSH Host-Key Prompts bei rsync/scp im Modul
+  RSYNC_RSH: "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
   # Persistenter lokaler State-Pfad auf dem Runner
   STATE_DIR: /home/ubuntu/ahmad_info/state/production
 
@@ -62,10 +65,15 @@ jobs:
       - name: Install deps for kubeconfig generation (rsync + yq)
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y rsync ca-certificates curl
-          sudo curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
+          if ! command -v rsync >/dev/null 2>&1 || ! command -v yq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y rsync ca-certificates curl
+            if ! command -v yq >/dev/null 2>&1; then
+              sudo curl -fsSL -o /usr/local/bin/yq \
+                https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+              sudo chmod +x /usr/local/bin/yq
+            fi
+          fi
           rsync --version
           yq --version
 
@@ -143,10 +151,15 @@ jobs:
       - name: Install deps for kubeconfig generation (rsync + yq)
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y rsync ca-certificates curl
-          sudo curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
+          if ! command -v rsync >/dev/null 2>&1 || ! command -v yq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y rsync ca-certificates curl
+            if ! command -v yq >/dev/null 2>&1; then
+              sudo curl -fsSL -o /usr/local/bin/yq \
+                https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+              sudo chmod +x /usr/local/bin/yq
+            fi
+          fi
           rsync --version
           yq --version
 
@@ -199,10 +212,15 @@ jobs:
       - name: Install deps for kubeconfig generation (rsync + yq)
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y rsync ca-certificates curl
-          sudo curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
+          if ! command -v rsync >/dev/null 2>&1 || ! command -v yq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y rsync ca-certificates curl
+            if ! command -v yq >/dev/null 2>&1; then
+              sudo curl -fsSL -o /usr/local/bin/yq \
+                https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+              sudo chmod +x /usr/local/bin/yq
+            fi
+          fi
           rsync --version
           yq --version
 
