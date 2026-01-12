@@ -148,7 +148,7 @@ EOF
 
   dns_nameservers4    = [local.dns_server]
   ff_autoremove_agent = "30s"
-  ff_write_kubeconfig = true
+  ff_write_kubeconfig = false
   ff_native_backup    = true
   ff_wait_ready       = true
 
