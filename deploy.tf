@@ -77,7 +77,8 @@ resource "null_resource" "deploy_k8s_stack" {
       "echo '#--------------------------------------------------------------#'",
       "echo \"#  IMMICH URL: http://$LB_IP                                   #\"",
       "echo '################################################################'",
-
+      "echo 'do LB_IP=$(kubectl get svc envoy -n projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].ip}') this IP in euren Browser eingeben und loslegen!'",
+      "echo ''",
       "echo '--- Deployment abgeschlossen! ---'"
     ]
   }
