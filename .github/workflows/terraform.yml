@@ -179,3 +179,19 @@ jobs:
           elif [ -f terraform.tfstate ]; then
             cp terraform.tfstate "$STATE_DIR/terraform.tfstate"
           fi
+      - name: Wait for Contour Ingress IP
+        shell: bash
+        run: |
+          for i in $(seq 1 30); do
+            LB_IP=$(kubectl get svc envoy -n projectcontour \
+              -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
+          
+            if [ -n "$LB_IP" ]; then
+              echo "SUCCESS: Ingress IP ist: $LB_IP"
+              echo "INGRESS_IP=$LB_IP" >> $GITHUB_ENV
+              break
+            fi
+          
+            echo "Warte auf IP... ($i/30)"
+            sleep 10
+          done
