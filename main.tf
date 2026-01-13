@@ -126,7 +126,7 @@ provider "openstack" {
   insecure    = local.insecure
   tenant_name = var.os_project
   user_name   = var.os_username
-  password    = var.os_project
+  password    = var.os_password
   auth_url    = local.auth_url
   region      = local.region
   cacert_file = local.cacert_file
