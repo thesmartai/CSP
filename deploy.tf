@@ -91,9 +91,18 @@ resource "null_resource" "deploy_k8s_stack" {
   }
 }
 
-#external enovy IP
+
+data "external" "k8s_ingress_ip" {
+  depends_on = [null_resource.deploy_k8s_stack]
+
+  program = [
+    "bash", "-lc",
+    "ssh -o StrictHostKeyChecking=no -i '${local.ssh_private_key}' ubuntu@${module.rke2.external_ip} 'cat /home/ubuntu/envoy_ip.txt 2>/dev/null || true' | jq -Rn '{ip: input}'"
+  ]
+}
+
 output "k8s_ingress_ip" {
-  value       = null_resource.deploy_k8s_stack.*.triggers.dir_sha1
+  value       = data.external.k8s_ingress_ip.result.ip
   description = "Die externe IP des Ingress Controllers (Envoy) im RKE2 Cluster"
 }
 
