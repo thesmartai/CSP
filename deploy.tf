@@ -32,16 +32,18 @@ resource "null_resource" "deploy_k8s_stack" {
 
       # Storage & Secrets 
       "echo '--- Applying Storage & Secrets into Namespace immich ---'",
-      "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
+
+      # wird nicht mehr benoetigt
+      # "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
 
       "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolumeClaim.yaml -n immich",
 
       "kubectl apply -f /home/ubuntu/k8s-objects/immich-db-secret.yaml -n immich",
 
       # Redis
-      "echo '--- Installing Redis ---'",
+      "echo '--- Installing Redis (Standalone / No Persistence) ---'",
       # redis kommt auch in den Namespace immich, damit der Hostname 'redis-master' einfach gefunden wird
-      "helm upgrade --install redis oci://registry-1.docker.io/bitnamicharts/redis --namespace immich --wait",
+      "helm upgrade --install redis oci://registry-1.docker.io/bitnamicharts/redis --namespace immich --set architecture=standalone --set master.persistence.enabled=false --wait",
 
       # CloudNativePG Operator 
       "echo '--- Installing CloudNativePG Operator ---'",
@@ -66,7 +68,10 @@ resource "null_resource" "deploy_k8s_stack" {
       "echo '--- Warte auf Zuweisung der Floating IP für Envoy... ---'",
       
       # Schleife: Prüft 30x alle 10 Sekunden, ob die IP da ist
-      "for i in $(seq 1 30); do LB_IP=$(kubectl get svc envoy -n projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null); if [ -n \"$LB_IP\" ]; then echo \"SUCCESS: Ingress IP ist: $LB_IP\"; break; fi; echo \"Warte auf IP... ($i/30)\"; sleep 10; done",
+      "LB_IP=''",
+      "for i in $(seq 1 30); do LB_IP=$(kubectl get svc envoy -n projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null); if [ -n \"$LB_IP\" ]; then break; fi; echo \"Warte auf IP... ($i/30)\"; sleep 10; done",
+
+      "if [ -n \"$LB_IP\" ]; then echo \"\"; echo \"################################################################\"; echo \"#                                                              #\"; echo \"#   Dein Immich Server ist erreichbar unter:                   #\"; echo \"#   http://$LB_IP.nip.io                               #\"; echo \"#                                                              #\"; echo \"################################################################\"; echo \"\"; else echo \"WARNUNG: Ingress IP konnte nicht ermittelt werden. Bitte 'kubectl get svc -n projectcontour' prüfen.\"; fi",
       
       # Zur Sicherheit nochmal den ganzen Status ausgeben
       "kubectl get svc envoy -n projectcontour",

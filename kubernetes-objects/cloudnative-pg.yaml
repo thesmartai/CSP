@@ -8,6 +8,7 @@ spec:
   storage:
     # GEÄNDERT: Größe von 1Gi auf 10Gi erhöht. 
     # 1Gi ist für eine Datenbank mit Vektor-Erweiterungen oft zu wenig.
+    # automatisch auf csi gespeichert
     size: 10Gi
 
   imageName: ghcr.io/tensorchord/cloudnative-vectorchord:16.9-0.4.3
