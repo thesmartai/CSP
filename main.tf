@@ -3,12 +3,12 @@
 #
 ###########################################################
 variable "os_project" {
-  type      = string
+  type = string
 
 }
 
 variable "os_username" {
-  type      = string
+  type = string
 
 }
 
