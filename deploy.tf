@@ -83,8 +83,19 @@ resource "null_resource" "deploy_k8s_stack" {
     ]
   }
 
+
+
   triggers = {
     # sollte eine Prüfsumme über alle Dateien im Ordner errechnen, um zu merken, wann das Skript erneut durchzulaufen hat.
     dir_sha1 = sha1(join("", [for f in fileset("${path.module}/kubernetes-objects", "*") : filesha1("${path.module}/kubernetes-objects/${f}")]))
   }
 }
+
+#external enovy IP
+output "k8s_ingress_ip" {
+  value       = null_resource.deploy_k8s_stack.*.triggers.dir_sha1
+  description = "Die externe IP des Ingress Controllers (Envoy) im RKE2 Cluster"
+}
+
+
+
