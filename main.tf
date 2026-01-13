@@ -80,7 +80,7 @@ EOF
       system_user        = local.system_user
       boot_volume_size   = 10
       rke2_version       = local.rke2_version
-      rke2_volume_size   = 100
+      rke2_volume_size   = 99
       rke2_volume_device = "/dev/vdb"
     }
   ]
