@@ -1,0 +1,16 @@
+name: destroy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform-destroy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Terraform Destroy
+        working-directory: actions-runner/_work/CSP/CPS
+        run: terraform destroy -auto-approve
