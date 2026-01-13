@@ -4,12 +4,12 @@
 ###########################################################
 variable "os_project" {
   type      = string
-  sensitive = true
+
 }
 
 variable "os_username" {
   type      = string
-  sensitive = true
+
 }
 
 variable "os_password" {
@@ -36,9 +36,9 @@ locals {
   floating_ip_pool = "ext_net"
 
   # SSH Keys
-  ssh_pubkey_file = "~/.ssh/id_ed25519.pub"
+  ssh_pubkey_file = pathexpand("~/.ssh/id_ed25519")
   # für den Upload der Dateien
-  ssh_private_key = "~/.ssh/id_ed25519"
+  ssh_private_key = pathexpand("~/.ssh/id_ed25519")
 
   dns_server   = "10.33.16.100"
   rke2_version = "v1.30.3+rke2r1"
