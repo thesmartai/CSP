@@ -71,9 +71,12 @@ resource "null_resource" "deploy_k8s_stack" {
       # Zur Sicherheit nochmal den ganzen Status ausgeben
       "kubectl get svc envoy -n projectcontour",
 
-
-
-
+      "echo ''",
+      "echo '################################################################'",
+      "echo '#  DEPLOYMENT ERFOLGREICH                                      #'",
+      "echo '#--------------------------------------------------------------#'",
+      "echo \"#  IMMICH URL: http://$LB_IP                                   #\"",
+      "echo '################################################################'",
 
       "echo '--- Deployment abgeschlossen! ---'"
     ]
