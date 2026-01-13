@@ -27,7 +27,7 @@ locals {
 
   kubeconfig_path = "${path.module}/${lower(var.project)}-k8s.rke2.yaml"
 }
-
+#
 module "rke2" {
   source = "git::https://github.com/srieger1/terraform-openstack-rke2.git?ref=hsfulda-example"
 
