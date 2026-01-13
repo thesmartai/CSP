@@ -83,7 +83,7 @@ resource "null_resource" "deploy_k8s_stack" {
     ]
   }
 
-
+#
 
   triggers = {
     # sollte eine Prüfsumme über alle Dateien im Ordner errechnen, um zu merken, wann das Skript erneut durchzulaufen hat.
