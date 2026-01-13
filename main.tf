@@ -18,7 +18,7 @@ variable "os_password" {
 }
 
 
-#
+# Lokale Variablen
 
 
 locals {
