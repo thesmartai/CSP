@@ -2,6 +2,24 @@
 # 
 #
 ###########################################################
+variable "os_project" {
+  type      = string
+  sensitive = true
+}
+
+variable "os_username" {
+  type      = string
+  sensitive = true
+}
+
+variable "os_password" {
+  type      = string
+  sensitive = true
+}
+
+
+
+
 
 locals {
   # Konfiguration
@@ -11,7 +29,7 @@ locals {
   region           = "RegionOne"
   cacert_file      = "./os-trusted-cas"
 
-  cluster_name     = lower("${var.project}-k8s")
+  cluster_name     = lower("${var.os_project}-k8s")
   image_name       = "ubuntu-22.04-jammy-server-cloud-image-amd64"
   flavor_name      = "m1.medium"
   system_user      = "ubuntu"
@@ -25,7 +43,7 @@ locals {
   dns_server   = "10.33.16.100"
   rke2_version = "v1.30.3+rke2r1"
 
-  kubeconfig_path = "${path.module}/${lower(var.project)}-k8s.rke2.yaml"
+  kubeconfig_path = "${path.module}/${lower(var.os_project)}-k8s.rke2.yaml"
 }
 #
 module "rke2" {
@@ -99,9 +117,6 @@ EOF
   }
 }
 
-variable "project" { type = string }
-variable "username" { type = string }
-variable "password" { type = string }
 
 output "floating_ip" {
   value = module.rke2.external_ip
@@ -109,9 +124,9 @@ output "floating_ip" {
 
 provider "openstack" {
   insecure    = local.insecure
-  tenant_name = var.project
-  user_name   = var.username
-  password    = var.password
+  tenant_name = var.os_project
+  user_name   = var.os_username
+  password    = var.os_project
   auth_url    = local.auth_url
   region      = local.region
   cacert_file = local.cacert_file
