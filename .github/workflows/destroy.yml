@@ -3,6 +3,18 @@ name: destroy
 on:
   workflow_dispatch:
 
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+  # Persistenter lokaler State-Pfad auf dem Runner
+  STATE_DIR: /home/ubuntu/ahmad_info/state/production
+
+  # Terraform Variablen (GitHub Repo Secrets)
+  TF_VAR_os_project: ${{ secrets.OS_PROJECT }}
+  TF_VAR_os_username: ${{ secrets.OS_USERNAME }}
+  TF_VAR_os_password: ${{ secrets.OS_PASSWORD }}
+
 jobs:
   terraform-destroy:
     runs-on: self-hosted
@@ -12,9 +24,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Terraform Init
-        working-directory: 
-        run: terraform init -input=false
+        run: |
+          mkdir -p "$STATE_DIR"
+          terraform -chdir=actions-runner/_work/CSP/CPS init -input=false
 
       - name: Terraform Destroy
-        working-directory: 
-        run: terraform destroy -auto-approve
+        run: |
+          terraform -chdir=actions-runner/_work/CSP/CPS destroy -auto-approve \
+            -state="$STATE_DIR/terraform.tfstate"
