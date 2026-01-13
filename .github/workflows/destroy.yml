@@ -1,34 +1,64 @@
-name: destroy
-
 on:
   workflow_dispatch:
-
-env:
-  TF_IN_AUTOMATION: "true"
-  TF_INPUT: "false"
-
-  # Persistenter lokaler State-Pfad auf dem Runner
-  STATE_DIR: /home/ubuntu/ahmad_info/state/production
-
-  # Terraform Variablen (GitHub Repo Secrets)
-  TF_VAR_os_project: ${{ secrets.OS_PROJECT }}
-  TF_VAR_os_username: ${{ secrets.OS_USERNAME }}
-  TF_VAR_os_password: ${{ secrets.OS_PASSWORD }}
+    inputs:
+      action:
+        description: "choose: plan/apply/destroy"
+        required: true
+        default: "plan"
+      confirm_destroy:
+        description: "Type DESTROY to confirm"
+        required: false
+        default: ""
 
 jobs:
-  terraform-destroy:
+  destroy:
+    name: Terraform Destroy
     runs-on: self-hosted
+    environment: production
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+
+    env:
+      TF_DIR: actions-runner/_work/CSP/CPS
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
+      - name: Safety check (must confirm)
         run: |
+          set -euo pipefail
+          if [ "${{ github.event.inputs.confirm_destroy }}" != "DESTROY" ]; then
+            echo "❌ Destroy not confirmed. Set confirm_destroy=DESTROY."
+            exit 1
+          fi
+
+      - name: Restore local state (persistent)
+        run: |
+          set -euo pipefail
           mkdir -p "$STATE_DIR"
-          terraform init -input=false
+          mkdir -p "$GITHUB_WORKSPACE/$TF_DIR/terraform.tfstate.d/production"
+          if [ -f "$STATE_DIR/terraform.tfstate" ]; then
+            cp "$STATE_DIR/terraform.tfstate" "$GITHUB_WORKSPACE/$TF_DIR/terraform.tfstate.d/production/terraform.tfstate"
+          fi
 
-      - name: Terraform Destroy
+      - name: Init (never in current dir)
+        run: terraform -chdir="$TF_DIR" init -input=false
+
+      - name: Select workspace (create if missing)
         run: |
-          terraform -auto-approve \
-            -state="$STATE_DIR/terraform.tfstate"
+          set -euo pipefail
+          terraform -chdir="$TF_DIR" workspace select production || terraform -chdir="$TF_DIR" workspace new production
+
+      - name: Destroy (never in current dir)
+        run: terraform -chdir="$TF_DIR" destroy -auto-approve -input=false
+
+      - name: Persist local state (persistent)
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$STATE_DIR"
+          if [ -f "$GITHUB_WORKSPACE/$TF_DIR/terraform.tfstate.d/production/terraform.tfstate" ]; then
+            cp "$GITHUB_WORKSPACE/$TF_DIR/terraform.tfstate.d/production/terraform.tfstate" "$STATE_DIR/terraform.tfstate"
+          elif [ -f "$GITHUB_WORKSPACE/$TF_DIR/terraform.tfstate" ]; then
+            cp "$GITHUB_WORKSPACE/$TF_DIR/terraform.tfstate" "$STATE_DIR/terraform.tfstate"
+          fi
