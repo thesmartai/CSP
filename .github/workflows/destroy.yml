@@ -26,9 +26,9 @@ jobs:
       - name: Terraform Init
         run: |
           mkdir -p "$STATE_DIR"
-          terraform -chdir=actions-runner/_work/CSP/CPS init -input=false
+          terraform init -input=false
 
       - name: Terraform Destroy
         run: |
-          terraform -chdir=actions-runner/_work/CSP/CPS destroy -auto-approve \
+          terraform -auto-approve \
             -state="$STATE_DIR/terraform.tfstate"
