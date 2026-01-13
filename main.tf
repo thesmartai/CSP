@@ -35,7 +35,7 @@ locals {
   system_user      = "ubuntu"
   floating_ip_pool = "ext_net"
 
-  # SSH Keys
+  # SSH Keyss
   ssh_pubkey_file = "/home/ubuntu/.ssh/id_ed25519.pub"
   # für den Upload der Dateien
   ssh_private_key = "/home/ubuntu/.ssh/id_ed25519"
