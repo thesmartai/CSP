@@ -11,5 +11,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Terraform Init
+        working-directory: actions-runner/_work/CSP/CPS
+        run: terraform init -input=false
+
       - name: Terraform Destroy
+        working-directory: actions-runner/_work/CSP/CPS
         run: terraform destroy -auto-approve
