@@ -12,5 +12,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Terraform Destroy
-        working-directory: actions-runner/_work/CSP/CPS
         run: terraform destroy -auto-approve
