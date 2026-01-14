@@ -76,6 +76,18 @@ resource "null_resource" "deploy_k8s_stack" {
       # Zur Sicherheit nochmal den ganzen Status ausgeben
       "kubectl get svc envoy -n projectcontour",
 
+      # installation argo cd
+      "helm repo add argo https://argoproj.github.io/argo-helm",
+      "helm repo update",
+      #idempotent
+      "kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -",
+      #idempotent
+      "helm upgrade --install argocd argo/argo-cd --namespace argocd --set server.service.type=LoadBalancer",
+      "kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd",
+      "kubectl get svc argocd-server -n argocd",
+      "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d",
+
+
 
 
 
