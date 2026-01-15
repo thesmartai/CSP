@@ -35,33 +35,6 @@ resource "null_resource" "deploy_k8s_stack" {
       # Helm installieren
       "if ! command -v helm &> /dev/null; then curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh; fi",
 
-      # -----------------------------------------------------------------------
-      # Alles folgende ist auskommentiert, da wir jetzt ArgoCD verwenden (GitOps)
-      # -----------------------------------------------------------------------
-
-      # Redis
-      # "echo '--- Installing Redis (Standalone / No Persistence) ---'",
-      # redis kommt auch in den Namespace immich, damit der Hostname 'redis-master' einfach gefunden wird
-      # "helm upgrade --install redis oci://registry-1.docker.io/bitnamicharts/redis --namespace immich --set architecture=standalone --set master.persistence.enabled=false --wait",
-
-      # CloudNativePG Operator 
-      # "echo '--- Installing CloudNativePG Operator ---'",
-      # "helm repo add cnpg https://cloudnative-pg.github.io/charts",
-      # "helm repo update",
-      # "helm upgrade --install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace --wait",
-
-      # Immich App
-      # "echo '--- Installing Immich ---'",
-      # "helm upgrade --install immich oci://ghcr.io/immich-app/immich-charts/immich --namespace immich --create-namespace --values /home/ubuntu/immich-values.yaml",
-
-      # Ingress
-      # "echo '--- Installing Ingress(Controller) ---'",
-      # "kubectl apply -f https://projectcontour.io/quickstart/contour.yaml",
-
-      # -----------------------------------------------------------------------
-      # Ende des auskommentierten Blocks
-      # -----------------------------------------------------------------------
-
       # installation argo cd
       "echo '--- Installing ArgoCD ---'",
       "helm repo add argo https://argoproj.github.io/argo-helm",
