@@ -9,22 +9,17 @@ resource "null_resource" "deploy_k8s_stack" {
   }
 
   provisioner "remote-exec" {
-    inline = ["mkdir -p /home/ubuntu/k8s-objects"]
+    inline = ["mkdir -p /home/ubuntu/manifests"]
   }
 
   provisioner "file" {
-    source      = "${path.module}/kubernetes-objects/"
-    destination = "/home/ubuntu/k8s-objects/"
+    source      = "${path.module}/manifests/"
+    destination = "/home/ubuntu/manifests/"
   }
 
   provisioner "file" {
-    source      = "${path.module}/argo_cd/application.yaml"
-    destination = "/home/ubuntu/application.yaml"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/argo_cd/values/values.yaml"
-    destination = "/home/ubuntu/immich-values.yaml"
+    source      = "${path.module}/argo_cd/applications/"
+    destination = "/home/ubuntu/argo-apps/"
   }
 
   provisioner "remote-exec" {
@@ -78,8 +73,9 @@ resource "null_resource" "deploy_k8s_stack" {
       "echo '--- ArgoCD Password ---'",
       "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d && echo ''",
 
-      "echo '--- Applying ArgoCD Application ---'",
-      "kubectl apply -f /home/ubuntu/application.yaml",
+      "echo '--- Applying ArgoCD Applications ---'",
+      "kubectl apply -f /home/ubuntu/argo-apps/infrastructure.yaml",
+      "kubectl apply -f /home/ubuntu/argo-apps/applications.yaml",
 
       "echo '--------------------------------'",
       "echo 'ArgoCD Deployment abgeschlossen!'",
@@ -89,6 +85,7 @@ resource "null_resource" "deploy_k8s_stack" {
 
   triggers = {
     # sollte eine Prüfsumme über alle Dateien im Ordner errechnen, um zu merken, wann das Skript erneut durchzulaufen hat.
-    dir_sha1 = sha1(join("", [for f in fileset("${path.module}/kubernetes-objects", "*") : filesha1("${path.module}/kubernetes-objects/${f}")]))
+    manifests_sha1 = sha1(join("", [for f in fileset("${path.module}/manifests", "*") : filesha1("${path.module}/manifests/${f}")]))
+    argo_sha1     = sha1(join("", [for f in fileset("${path.module}/argo_cd/applications", "*") : filesha1("${path.module}/argo_cd/applications/${f}")]))
   }
 }
