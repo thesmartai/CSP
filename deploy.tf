@@ -34,21 +34,18 @@ resource "null_resource" "deploy_k8s_stack" {
       "export KUBECONFIG=/etc/rancher/rke2/rke2.yaml",
       "sudo chmod 644 /etc/rancher/rke2/rke2.yaml",
 
-      # Namespace explizit erstellen -> Macht ArgoCD automatisch bei Bedarf
-      # "kubectl create namespace immich --dry-run=client -o yaml | kubectl apply -f -",
-
       # Helm installieren
       "if ! command -v helm &> /dev/null; then curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh; fi",
-
-      # Storage & Secrets -> Macht jetzt ArgoCD
-      # "echo '--- Applying Storage & Secrets into Namespace immich ---'",
-
-      # wird nicht mehr benoetigt, da CephFS
-      # "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
 
       # -----------------------------------------------------------------------
       # Alles folgende ist auskommentiert, da wir jetzt ArgoCD verwenden (GitOps)
       # -----------------------------------------------------------------------
+      
+      # Namespace explizit erstellen -> Macht ArgoCD automatisch bei Bedarf
+      # "kubectl create namespace immich --dry-run=client -o yaml | kubectl apply -f -",
+
+      # wird nicht mehr benoetigt, da CephFS
+      # "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
 
       # "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolumeClaim.yaml -n immich",
 
