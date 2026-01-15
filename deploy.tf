@@ -41,16 +41,6 @@ resource "null_resource" "deploy_k8s_stack" {
       # Alles folgende ist auskommentiert, da wir jetzt ArgoCD verwenden (GitOps)
       # -----------------------------------------------------------------------
       
-      # Namespace explizit erstellen -> Macht ArgoCD automatisch bei Bedarf
-      # "kubectl create namespace immich --dry-run=client -o yaml | kubectl apply -f -",
-
-      # wird nicht mehr benoetigt, da CephFS
-      # "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolume.yaml",
-
-      # "kubectl apply -f /home/ubuntu/k8s-objects/persistentVolumeClaim.yaml -n immich",
-
-      # "kubectl apply -f /home/ubuntu/k8s-objects/immich-db-secret.yaml -n immich",
-
       # Redis
       # "echo '--- Installing Redis (Standalone / No Persistence) ---'",
       # redis kommt auch in den Namespace immich, damit der Hostname 'redis-master' einfach gefunden wird
