@@ -9,7 +9,10 @@ resource "null_resource" "deploy_k8s_stack" {
   }
 
   provisioner "remote-exec" {
-    inline = ["mkdir -p /home/ubuntu/manifests"]
+    inline = [
+      "mkdir -p /home/ubuntu/manifests",
+      "mkdir -p /home/ubuntu/argo-apps"
+    ]
   }
 
   provisioner "file" {

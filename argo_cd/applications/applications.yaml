@@ -12,28 +12,11 @@ spec:
       selfHeal: true
       prune: true
 
-  # Immich Main App (via Helm)
-  source:
-    repoURL: ghcr.io/immich-app/immich-charts
-    chart: immich
-    targetRevision: 0.8.0
-    helm:
-      valueFiles:
-      - values.yaml # This expects values.yaml in the chart, but we want our own.
-                    # Since we can't reference a file from another repo in a Helm source easily 
-                    # without an "Umbrella Chart", and we can't mix sources in one Application,
-                    # we will paste the critical values here or use a different approach.
-                    # 
-                    # BETTER APPROACH FOR SIMPLICITY:
-                    # Point to our Git Repo, but that doesn't install the Chart.
-                    # 
-                    # WORKING SOLUTION:
-                    # We will use the "Multiple Sources" feature of ArgoCD (requires ArgoCD v2.6+).
-                    # If older, we need 2 apps or "Umbrella". Assuming v2.6+:
+  # Immich Main App (via Helm) and Value Files from Git
   sources:
   - repoURL: ghcr.io/immich-app/immich-charts
     chart: immich
-    targetRevision: 0.8.0
+    targetRevision: 0.10.3
     helm:
       valueFiles:
       - $values/argo_cd/values/immich-values.yaml
