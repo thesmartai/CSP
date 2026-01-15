@@ -6,6 +6,6 @@ metadata:
 spec:
   defaultBackend:
     service:
-      name: immich-server
+      name: immich-app-server
       port:
         number: 2283
