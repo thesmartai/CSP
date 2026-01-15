@@ -17,6 +17,16 @@ resource "null_resource" "deploy_k8s_stack" {
     destination = "/home/ubuntu/k8s-objects/"
   }
 
+  provisioner "file" {
+    source      = "${path.module}/argo_cd/application.yaml"
+    destination = "/home/ubuntu/application.yaml"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/argo_cd/values/values.yaml"
+    destination = "/home/ubuntu/immich-values.yaml"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "echo '--- Starte Konfiguration ---'",
@@ -61,7 +71,7 @@ resource "null_resource" "deploy_k8s_stack" {
 
       # Immich App
       # "echo '--- Installing Immich ---'",
-      # "helm upgrade --install immich oci://ghcr.io/immich-app/immich-charts/immich --namespace immich --create-namespace --values /home/ubuntu/k8s-objects/values.yaml",
+      # "helm upgrade --install immich oci://ghcr.io/immich-app/immich-charts/immich --namespace immich --create-namespace --values /home/ubuntu/immich-values.yaml",
 
       # Ingress
       # "echo '--- Installing Ingress(Controller) ---'",
@@ -97,6 +107,9 @@ resource "null_resource" "deploy_k8s_stack" {
       # Password ausgeben
       "echo '--- ArgoCD Password ---'",
       "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d && echo ''",
+
+      "echo '--- Applying ArgoCD Application ---'",
+      "kubectl apply -f /home/ubuntu/application.yaml",
 
       "echo '--------------------------------'",
       "echo 'ArgoCD Deployment abgeschlossen!'",
