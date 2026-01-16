@@ -44,7 +44,7 @@ resource "null_resource" "deploy_k8s_stack" {
       #idempotent
       "helm upgrade --install argocd argo/argo-cd --namespace argocd --set server.service.type=LoadBalancer --wait",
       "kubectl get svc argocd-server -n argocd",
-      
+
       # Password ausgeben
       "echo '--- ArgoCD Password ---'",
       "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d && echo ''",
@@ -66,7 +66,7 @@ resource "null_resource" "deploy_k8s_stack" {
     # Änderungen an normalen Manifesten (manifests/*) werden von ArgoCD via Git erkannt,
     # daher müssen wir hier Terraform nicht neu triggern.
     argo_applications = sha1(join("", [for f in fileset("${path.module}/argo_cd/applications", "*") : filesha1("${path.module}/argo_cd/applications/${f}")]))
-    
+
     # Auch neu ausführen, wenn wir einen neuen Server haben (IP ändert sich)
     server_ip = module.rke2.external_ip
   }
