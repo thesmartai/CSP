@@ -74,7 +74,7 @@ spec:
   # Contour (via Git Directory)
   source:
     repoURL: https://github.com/thesmartai/CSP.git
-    targetRevision: argo_cd
+    targetRevision: main
     path: argo_cd/pre-built
   destination:
     server: https://kubernetes.default.svc

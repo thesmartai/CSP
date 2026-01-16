@@ -21,7 +21,7 @@ spec:
       valueFiles:
       - $values/argo_cd/values/immich-values.yaml
   - repoURL: https://github.com/thesmartai/CSP.git
-    targetRevision: argo_cd
+    targetRevision: main
     ref: values
   
   destination:
@@ -46,7 +46,7 @@ spec:
   # Our Custom Manifests (DB Cluster, Ingress, Secrets)
   source:
     repoURL: https://github.com/thesmartai/CSP.git
-    targetRevision: argo_cd
+    targetRevision: main
     path: manifests
   destination:
     server: https://kubernetes.default.svc
