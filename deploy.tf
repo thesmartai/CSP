@@ -60,8 +60,12 @@ resource "null_resource" "deploy_k8s_stack" {
   }
 
   triggers = {
-    # sollte eine Prüfsumme über alle Dateien im Ordner errechnen, um zu merken, wann das Skript erneut durchzulaufen hat.
-    manifests_sha1 = sha1(join("", [for f in fileset("${path.module}/manifests", "*") : filesha1("${path.module}/manifests/${f}")]))
-    argo_sha1     = sha1(join("", [for f in fileset("${path.module}/argo_cd/applications", "*") : filesha1("${path.module}/argo_cd/applications/${f}")]))
+    # Führe Deployment nur aus, wenn sich die ArgoCD Application-Definitionen ändern (Bootstrap).
+    # Änderungen an normalen Manifesten (manifests/*) werden von ArgoCD via Git erkannt,
+    # daher müssen wir hier Terraform nicht neu triggern.
+    argo_applications = sha1(join("", [for f in fileset("${path.module}/argo_cd/applications", "*") : filesha1("${path.module}/argo_cd/applications/${f}")]))
+    
+    # Auch neu ausführen, wenn wir einen neuen Server haben (IP ändert sich)
+    server_ip = module.rke2.external_ip
   }
 }
