@@ -4,8 +4,9 @@ metadata:
   name: ingress
   namespace: immich
 spec:
+  ingressClassName: contour
   defaultBackend:
     service:
-      name: immich-server
+      name: immich-app-server
       port:
         number: 2283
