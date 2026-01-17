@@ -73,3 +73,5 @@ resource "null_resource" "deploy_k8s_stack" {
 }
 
 
+
+# trigger cd pipeline
