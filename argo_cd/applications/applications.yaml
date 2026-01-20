@@ -65,7 +65,7 @@ spec:
       selfHeal: true
       prune: true
   source:
-    repoURL: https://github.com/prometheus-community/helm-charts
+    repoURL: https://prometheus-community.github.io/helm-charts
     chart: kube-prometheus-stack
     targetRevision: 45.6.0
     helm:
@@ -87,14 +87,11 @@ spec:
       selfHeal: true
       prune: true
   source:
-    repoURL: https://grafana.github.io/helm-charts
-    chart: loki-stack
-    targetRevision: 2.11.0
+    repoURL: https://grafana.github.io/loki/charts
+    chart: loki
+    targetRevision: 6.4.0
     helm:
       releaseName: loki
-      values: |
-        promtail:
-          enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
