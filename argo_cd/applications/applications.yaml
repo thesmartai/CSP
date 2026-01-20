@@ -71,7 +71,7 @@ spec:
     targetRevision: main
     path: argo_cd/pre-built
     directory:
-      include: prometheus-stack.yaml
+      include: prometheus-*.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
