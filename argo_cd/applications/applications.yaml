@@ -51,3 +51,50 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: immich
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  project: default
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+  source:
+    repoURL: https://github.com/prometheus-community/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 45.6.0
+    helm:
+      releaseName: prometheus-stack
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki-stack
+  namespace: argocd
+spec:
+  project: default
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki-stack
+    targetRevision: 2.11.0
+    helm:
+      releaseName: loki
+      values: |
+        promtail:
+          enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
