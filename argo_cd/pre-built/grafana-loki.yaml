@@ -105,6 +105,8 @@ spec:
       - name: loki
         image: grafana/loki:3.0.0
         imagePullPolicy: IfNotPresent
+        args:
+        - "-config.file=/etc/loki/config.yaml"
         ports:
         - name: http-metrics
           containerPort: 3100
