@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  project: default
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+  source:
+    repoURL: https://github.com/prometheus-community/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 45.6.0
+    helm:
+      releaseName: prometheus-stack
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
