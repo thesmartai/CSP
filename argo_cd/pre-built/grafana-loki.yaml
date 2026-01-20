@@ -102,6 +102,10 @@ spec:
         helm.sh/chart: loki-6.0.0
     spec:
       serviceAccountName: loki
+      securityContext:
+        fsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
       containers:
       - name: loki
         image: grafana/loki:3.0.0
@@ -112,6 +116,18 @@ spec:
         - name: http-metrics
           containerPort: 3100
           protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 3100
+          initialDelaySeconds: 45
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3100
+          initialDelaySeconds: 45
+          periodSeconds: 10
         resources:
           limits:
             memory: 256Mi
@@ -127,12 +143,5 @@ spec:
       - name: config
         configMap:
           name: loki
-  volumeClaimTemplates:
-  - metadata:
-      name: storage
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
+      - name: storage
+        emptyDir: {}
