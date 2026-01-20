@@ -87,9 +87,9 @@ spec:
       selfHeal: true
       prune: true
   source:
-    repoURL: https://grafana.github.io/loki/charts
+    repoURL: https://grafana.github.io/helm-charts
     chart: loki
-    targetRevision: 6.4.0
+    targetRevision: 5.42.3
     helm:
       releaseName: loki
   destination:
