@@ -1,0 +1,365 @@
+# This file is pre-built from the Prometheus Operator Helm chart
+# Generated to avoid large CRD annotation issues
+# Source: kube-prometheus-stack v51.3.0 (simplified)
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-operator
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-operator
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-operator
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-operator
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+rules:
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - alertmanagers
+  - alertmanagerconfigs
+  - prometheuses
+  - prometheusagents
+  - servicemonitors
+  - podmonitors
+  - probes
+  - prometheusrules
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-operator
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-operator
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-operator
+subjects:
+- kind: ServiceAccount
+  name: prometheus-operator
+  namespace: monitoring
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-operator
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-prometheus-stack-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-prometheus-stack-operator
+        helm.sh/chart: kube-prometheus-stack-51.3.0
+    spec:
+      serviceAccountName: prometheus-operator
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus-operator/prometheus-operator:v0.68.0
+        imagePullPolicy: IfNotPresent
+        args:
+        - --kubelet-service=kube-system/kubelet
+        - --localhost=127.0.0.1
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.68.0
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-operator
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-operator
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: kube-prometheus-stack-operator
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-prometheus
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-prometheus
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+spec:
+  type: ClusterIP
+  ports:
+  - name: web
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: kube-prometheus-stack-prometheus
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-prometheus
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+data:
+  prometheus.yaml: |
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      evaluation_interval: 30s
+    alerting:
+      alertmanagers: []
+    rule_files: []
+    scrape_configs:
+    - job_name: prometheus
+      static_configs:
+      - targets:
+        - localhost:9090
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-prometheus
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-prometheus-stack-prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-prometheus-stack-prometheus
+        helm.sh/chart: kube-prometheus-stack-51.3.0
+    spec:
+      serviceAccountName: prometheus
+      containers:
+      - name: prometheus
+        image: quay.io/prometheus/prometheus:v2.48.1
+        imagePullPolicy: IfNotPresent
+        args:
+        - --config.file=/etc/prometheus/prometheus.yaml
+        - --storage.tsdb.path=/prometheus
+        - --web.console.libraries=/usr/share/prometheus/console_libraries
+        - --web.console.templates=/usr/share/prometheus/consoles
+        - --storage.tsdb.retention.time=30d
+        ports:
+        - containerPort: 9090
+          name: web
+        resources:
+          limits:
+            memory: 512Mi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: storage
+          mountPath: /prometheus
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      - name: storage
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: node-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-node-exporter
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-exporter
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-node-exporter
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes/proxy
+  verbs:
+  - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: node-exporter
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-node-exporter
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: node-exporter
+subjects:
+- kind: ServiceAccount
+  name: node-exporter
+  namespace: monitoring
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-node-exporter
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+spec:
+  type: ClusterIP
+  ports:
+  - name: metrics
+    port: 9100
+    targetPort: 9100
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: kube-prometheus-stack-node-exporter
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack-node-exporter
+    helm.sh/chart: kube-prometheus-stack-51.3.0
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-prometheus-stack-node-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kube-prometheus-stack-node-exporter
+        helm.sh/chart: kube-prometheus-stack-51.3.0
+    spec:
+      serviceAccountName: node-exporter
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - name: node-exporter
+        image: quay.io/prometheus/node-exporter:v1.7.0
+        imagePullPolicy: IfNotPresent
+        args:
+        - --path.procfs=/host/proc
+        - --path.sysfs=/host/sys
+        - --path.rootfs=/rootfs
+        - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+        ports:
+        - containerPort: 9100
+          name: metrics
+        resources:
+          limits:
+            memory: 100Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        volumeMounts:
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: sys
+          mountPath: /host/sys
+          readOnly: true
+        - name: rootfs
+          mountPath: /rootfs
+          readOnly: true
+      volumes:
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: rootfs
+        hostPath:
+          path: /
