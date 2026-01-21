@@ -570,7 +570,7 @@ data:
                 "type": "prometheus",
                 "uid": "Prometheus"
               },
-              "expr": "sum(rate(http_requests_total{app=\"immich-server\"}[5m]))",
+              "expr": "sum(rate(http_server_request_size_count{app=\"immich-server\"}[5m]))",
               "refId": "A"
             }
           ]
@@ -625,7 +625,7 @@ data:
                   }
                 ]
               },
-              "unit": "s"
+              "unit": "bytes"
             },
             "overrides": []
           },
@@ -648,7 +648,7 @@ data:
               "sort": "none"
             }
           },
-          "title": "Response Time (P95) Server",
+          "title": "Request Size (P95) Server",
           "type": "timeseries",
           "targets": [
             {
@@ -656,7 +656,7 @@ data:
                 "type": "prometheus",
                 "uid": "Prometheus"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"immich-server\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_request_size_bucket{app=\"immich-server\"}[5m])) by (le))",
               "refId": "A"
             }
           ]
@@ -742,7 +742,7 @@ data:
                 "type": "prometheus",
                 "uid": "Prometheus"
               },
-              "expr": "sum(rate(http_requests_total{status!~\"2..\"}[5m])) / sum(rate(http_requests_total[5m])) * 100",
+              "expr": "sum(rate(http_server_request_size_count{status!~\"2..\"}[5m])) / sum(rate(http_server_request_size_count[5m])) * 100",
               "refId": "A"
             }
           ]
@@ -820,7 +820,7 @@ data:
               "sort": "none"
             }
           },
-          "title": "Immich Job Count",
+          "title": "Immich User Count",
           "type": "timeseries",
           "targets": [
             {
@@ -828,7 +828,7 @@ data:
                 "type": "prometheus",
                 "uid": "Prometheus"
               },
-              "expr": "sum(immich_job_count)",
+              "expr": "sum(immich_users_total)",
               "refId": "A"
             }
           ]
