@@ -54,11 +54,29 @@ spec:
         - mountPath: /etc/grafana/provisioning/datasources
           name: grafana-datasources
           readOnly: true
+        - mountPath: /etc/grafana/provisioning/dashboards/dashboard-provider.yaml
+          subPath: dashboard-provider.yaml
+          name: grafana-dashboards-provider
+        - mountPath: /var/lib/grafana/dashboards/infrastructure-dashboard.json
+          subPath: infrastructure-dashboard.json
+          name: grafana-dashboard-infra
+        - mountPath: /var/lib/grafana/dashboards/immich-dashboard.json
+          subPath: immich-dashboard.json
+          name: grafana-dashboard-app
       volumes:
       - name: grafana-datasources
         configMap:
           defaultMode: 420
           name: grafana-datasources
+      - name: grafana-dashboards-provider
+        configMap:
+          name: grafana-dashboards-provider
+      - name: grafana-dashboard-infra
+        configMap:
+          name: grafana-dashboard-infra
+      - name: grafana-dashboard-app
+        configMap:
+          name: grafana-dashboard-app
 
 ---
 apiVersion: v1
