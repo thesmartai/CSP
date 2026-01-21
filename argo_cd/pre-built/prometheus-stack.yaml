@@ -244,9 +244,17 @@ data:
       scrape_interval: 15s
       metrics_path: /metrics
       static_configs:
-        - targets: ['immich-server.immich.svc:3001']
+        - targets: ['immich-app-server.immich.svc:8081']
           labels:
             app: immich-server
+
+    - job_name: 'immich-microservices'
+      scrape_interval: 15s
+      metrics_path: /metrics
+      static_configs:
+        - targets: ['immich-app-server.immich.svc:8082']
+          labels:
+            app: immich-microservices
 
     - job_name: 'kube-state-metrics'
       static_configs:
