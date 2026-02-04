@@ -121,6 +121,7 @@ data:
                 "uid": "Prometheus"
               },
               "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "legendFormat": "{{instance}}",
               "refId": "A"
             }
           ]
@@ -207,6 +208,7 @@ data:
                 "uid": "Prometheus"
               },
               "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+              "legendFormat": "{{instance}}",
               "refId": "A"
             }
           ]
@@ -357,6 +359,7 @@ data:
                 "uid": "Prometheus"
               },
               "expr": "rate(node_network_receive_bytes_total[5m])",
+              "legendFormat": "{{instance}} - {{device}}",
               "refId": "A"
             }
           ]
@@ -443,6 +446,7 @@ data:
                 "uid": "Prometheus"
               },
               "expr": "rate(node_network_transmit_bytes_total[5m])",
+              "legendFormat": "{{instance}} - {{device}}",
               "refId": "A"
             }
           ]
@@ -462,8 +466,8 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "Infrastructure & Kubernetes Health",
-      "uid": "infra-k8s-health",
+          "title": "Infrastructure & Kubernetes Health V2",
+      "uid": "infra-k8s-health-v2",
       "version": 1,
       "weekStart": ""
     }
