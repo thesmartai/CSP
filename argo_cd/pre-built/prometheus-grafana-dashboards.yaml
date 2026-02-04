@@ -625,7 +625,7 @@ data:
                   }
                 ]
               },
-              "unit": "bytes"
+              "unit": "s"
             },
             "overrides": []
           },
@@ -648,7 +648,7 @@ data:
               "sort": "none"
             }
           },
-          "title": "Request Size (P95) Server",
+          "title": "Server Response Time (P95)",
           "type": "timeseries",
           "targets": [
             {
@@ -656,7 +656,7 @@ data:
                 "type": "prometheus",
                 "uid": "Prometheus"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(http_server_request_size_bucket{app=\"immich-server\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_bucket{app=\"immich-server\"}[5m])) by (le))",
               "refId": "A"
             }
           ]
@@ -850,7 +850,7 @@ data:
       "timepicker": {},
       "timezone": "",
       "title": "Immich Application Performance",
-      "uid": "immich-app-stats",
+      "uid": "immich-app-stats-v2",
       "version": 1,
       "weekStart": ""
     }
