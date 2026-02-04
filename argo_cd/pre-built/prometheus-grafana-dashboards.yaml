@@ -849,7 +849,7 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "Immich Application Performance",
+      "title": "Immich Application Performance V2",
       "uid": "immich-app-stats-v2",
       "version": 1,
       "weekStart": ""
