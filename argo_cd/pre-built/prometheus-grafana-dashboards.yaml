@@ -571,6 +571,7 @@ data:
                 "uid": "Prometheus"
               },
               "expr": "sum(rate(http_server_request_size_count{app=\"immich-server\"}[5m]))",
+              "legendFormat": "Requests/sec",
               "refId": "A"
             }
           ]
@@ -744,6 +745,7 @@ data:
                 "uid": "Prometheus"
               },
               "expr": "sum(rate(http_server_request_size_count{status!~\"2..\"}[5m])) / sum(rate(http_server_request_size_count[5m])) * 100",
+              "legendFormat": "Error Rate %",
               "refId": "A"
             }
           ]
@@ -830,6 +832,7 @@ data:
                 "uid": "Prometheus"
               },
               "expr": "sum(immich_users_total)",
+              "legendFormat": "Users",
               "refId": "A"
             }
           ]
@@ -850,8 +853,8 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "Immich Application Performance V2",
-      "uid": "immich-app-stats-v2",
+      "title": "Immich Application Performance V3",
+      "uid": "immich-app-stats-v3",
       "version": 1,
       "weekStart": ""
     }
