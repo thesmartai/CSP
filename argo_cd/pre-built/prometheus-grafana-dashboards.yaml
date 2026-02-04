@@ -657,6 +657,7 @@ data:
                 "uid": "Prometheus"
               },
               "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_bucket{app=\"immich-server\"}[5m])) by (le))",
+              "legendFormat": "Response Time (P95)",
               "refId": "A"
             }
           ]
