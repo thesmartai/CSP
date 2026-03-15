@@ -1,3 +1,5 @@
+# Ingress-Ressource für den externen Zugriff auf Immich
+# Setzt den Contour Ingress Controller voraus (ingressClassName: contour)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -5,8 +7,13 @@ metadata:
   namespace: immich
 spec:
   ingressClassName: contour
+  # defaultBackend leitet allen eingehenden Traffic ohne explizite Pfadregel an den Immich-Server weiter.
+  # Praktisch für Single-App-Deployments, aber ungeeignet, wenn mehrere Dienste unter derselben
+  # IP/Domain erreichbar sein sollen.
   defaultBackend:
     service:
       name: immich-app-server
       port:
         number: 2283
+
+# Achtung: kein TLS konfiguriert

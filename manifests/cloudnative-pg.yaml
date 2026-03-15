@@ -1,8 +1,11 @@
+# CloudNativePG-Cluster für die Immich-Datenbank.
+# Der Operator muss im Cluster installiert sein, bevor diese Ressource angewendet wird.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: immich-database
 spec:
+  # einzelne Instanz
   instances: 1
 
   storage:
