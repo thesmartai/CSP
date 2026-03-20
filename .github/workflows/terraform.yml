@@ -1,3 +1,5 @@
+# Autor: Ahmad Thaljeh
+# Workflow wird ausgelöst bei: Pull Requests, Push auf main, oder manuell
 name: Terraform
 on:
   pull_request:
@@ -5,10 +7,13 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+# Stellt sicher, dass nur eine Terraform-Ausführung gegen production gleichzeitig läuft
+# cancel-in-progress: false bedeutet, laufende Ausführungen werden nicht abgebrochen
 concurrency:
   group: terraform-production
   cancel-in-progress: false
 
+# Minimale Berechtigungen – nur Lesen des Repository-Inhalts
 permissions:
   contents: read
 
@@ -18,22 +23,21 @@ defaults:
     working-directory: .
 
 env:
-  TF_IN_AUTOMATION: "true"
-  TF_INPUT: "false"
+  TF_IN_AUTOMATION: "true"  # Teilt Terraform mit, dass es in CI/CD läuft
+  TF_INPUT: "false"          # Deaktiviert interaktive Eingaben
 
-
-  # Persistenter lokaler State-Pfad auf dem Runner
+  # Persistentes State-Verzeichnis auf dem self-hosted Runner (bleibt zwischen Runs erhalten)
   STATE_DIR: /home/ubuntu/ahmad_info/state/production
 
-  # Terraform Variablen (GitHub Repo Secrets)
+  # OpenStack-Zugangsdaten werden aus GitHub Secrets geladen
   TF_VAR_os_project: ${{ secrets.OS_PROJECT }}
   TF_VAR_os_username: ${{ secrets.OS_USERNAME }}
   TF_VAR_os_password: ${{ secrets.OS_PASSWORD }}
 
 
-
-
 jobs:
+  # ─── PLAN-JOB ───────────────────────────────────────────────────────────────
+  # Läuft bei allen Events (PR, Push, manuell). Erstellt einen Plan ohne Änderungen.
   plan:
     name: Terraform Plan
     runs-on: self-hosted
@@ -42,6 +46,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
 
+      # Installiert rsync und yq falls auf dem Runner nicht vorhanden
+      # yq wird zum Parsen/Mergen von kubeconfig-Dateien aus dem Terraform-Output benötigt
       - name: Install deps for kubeconfig generation (rsync + yq)
         run: |
           set -euo pipefail
@@ -57,6 +63,7 @@ jobs:
           rsync --version
           yq --version
 
+      # Hilfreich für Fehlersuche – zeigt welcher Runner und Workspace verwendet wird
       - name: Debug runner/workspace
         run: |
           set -euo pipefail
@@ -64,6 +71,8 @@ jobs:
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE:-}"
           pwd
 
+      # Kopiert die persistierte State-Datei in den Workspace vor dem Init
+      # Stellt sicher, dass Terraform den korrekten State hat, auch nach einem neuen Checkout
       - name: Restore local state (persistent)
         run: |
           set -euo pipefail
@@ -76,17 +85,21 @@ jobs:
       - name: Init
         run: terraform init
 
+      # Wählt den "production"-Workspace; erstellt ihn falls er nicht existiert
       - name: Select workspace (create if missing)
         run: |
           set -euo pipefail
           terraform workspace select production || terraform workspace new production
 
+      # Prüft, ob alle .tf-Dateien korrekt formatiert sind
       - name: Fmt
         run: terraform fmt -check -recursive
 
+      # Validiert die Terraform-Konfiguration ohne den Provider zu kontaktieren
       - name: Validate
         run: terraform validate
 
+      # Zeigt State-Dateien und Workspace zur Fehlersuche an
       - name: Debug state/workspace
         run: |
           set -euo pipefail
@@ -98,6 +111,7 @@ jobs:
           ls -la terraform.tfstate.d/production || true
           ls -la "$STATE_DIR" || true
 
+      # Erstellt einen Plan und speichert ihn als Artifact für den Apply-Job
       - name: Plan
         run: terraform plan -input=false -out=tfplan
 
@@ -107,6 +121,7 @@ jobs:
           name: tfplan
           path: tfplan
 
+      # Speichert den aktualisierten State zurück ins persistente Verzeichnis – wird immer ausgeführt
       - name: Persist local state (persistent)
         if: always()
         run: |
@@ -118,16 +133,19 @@ jobs:
             cp terraform.tfstate "$STATE_DIR/terraform.tfstate"
           fi
 
+  # APPLY-JOB
+  # Läuft nur bei Push auf main. Verwendet den Plan aus dem Plan-Job.
   apply:
     name: Terraform Apply
     runs-on: self-hosted
-    needs: plan
+    needs: plan  # Wartet auf den Abschluss des Plan-Jobs
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
 
+      # Gleiche Abhängigkeitsprüfung wie im Plan-Job
       - name: Install deps for kubeconfig generation (rsync + yq)
         run: |
           set -euo pipefail
@@ -143,6 +161,7 @@ jobs:
           rsync --version
           yq --version
 
+      # State vor dem Init wiederherstellen, gleich wie im Plan-Job
       - name: Restore local state (persistent)
         run: |
           set -euo pipefail
@@ -155,20 +174,24 @@ jobs:
       - name: Init
         run: terraform init
 
+      # Wählt denselben Workspace wie der Plan-Job
       - name: Select workspace (create if missing)
         run: |
           set -euo pipefail
           terraform workspace select production || terraform workspace new production
 
+      # Lädt den Plan herunter, der vom Plan-Job erstellt und hochgeladen wurde
       - name: Download plan artifact
         uses: actions/download-artifact@v4
         with:
           name: tfplan
           path: .
 
+      # Führt den Plan ohne Rückfrage aus (-auto-approve)
       - name: Apply
         run: terraform apply -auto-approve -input=false tfplan
 
+      # Speichert den aktualisierten State nach dem Apply – wird immer ausgeführt (auch bei Fehler)
       - name: Persist local state (persistent)
         if: always()
         run: |
